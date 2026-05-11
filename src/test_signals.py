@@ -33,7 +33,7 @@ from signal_construction import (
 # =============================================================================
 
 DATA_DIR = os.path.expanduser(
-    '~/Desktop/Quant Research Project/raw-data/trades/GLBX-20250501-20251231/'
+    '~/Desktop/X9 Pro/raw-market-data/es-futures/trades/GLBX-20250501-20251231/'
 )
 TZ = 'America/New_York'
 

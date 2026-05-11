@@ -60,10 +60,10 @@ from signal_construction import (
 # =============================================================================
 
 DATA_DIR = os.path.expanduser(
-    '~/Desktop/Quant Research Project/raw-data/trades/GLBX-20250501-20251231/'
+    '~/Desktop/X9 Pro/raw-market-data/es-futures/trades/GLBX-20250501-20251231/'
 )
 OOS_DATA_DIR = os.path.expanduser(
-    '~/Desktop/Quant Research Project/raw-data/trades/GLBX-20260101-20260309/'
+    '~/Desktop/X9 Pro/raw-market-data/es-futures/trades/GLBX-20260101-20260309/'
 )
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), '..', 'results', 'phase4')
 os.makedirs(RESULTS_DIR, exist_ok=True)
