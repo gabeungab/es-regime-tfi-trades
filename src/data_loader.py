@@ -116,6 +116,8 @@ def load_all_days(directory):
     for file in sorted(os.listdir(directory)):
         if not file.endswith('.dbn.zst'):
             continue
+        if file.startswith('._'):
+            continue
         date_str = file[10:18]
         if date_str in EXCLUDED_DATES:
             print(f"  Skipping {file} (excluded date)")

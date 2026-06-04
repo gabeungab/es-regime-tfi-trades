@@ -27,7 +27,7 @@ from data_loader import load_all_days, remove_outliers, compute_daily_stats, plo
 # =============================================================================
 
 DATA_DIR    = os.path.expanduser(
-    '~/Desktop/X9 Pro/raw-market-data/es-futures/trades/GLBX-20250501-20251231/'
+    '/Volumes/X9 Pro/raw-market-data/es-futures/trades/GLBX-20250501-20251231/'
 )
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), '..', 'results', 'phase1')
 
