@@ -51,15 +51,20 @@ applications at top firms.
 
 ## Current status
 
-**ALL PHASES COMPLETE. PROJECT FINALIZED.**
+**ALL PHASES COMPLETE. PHASE 0 IMPROVEMENTS IN PROGRESS.**
 
 Final paper: `paper/es_regime_tfi_trades.pdf` (27 pages).
 Repository: es-futures-microstructure on GitHub.
 All code polished, all results regenerated, README updated.
 
+Phase 0 quality improvements (project2_plan.md):
+- P0-1 R² Decomposition — COMPLETE
+- P0-2 Threshold Sensitivity — COMPLETE
+- P0-3 through P0-7 — PENDING
+
 Next project: Paper 2 — MBO-based orthogonal regime detector study.
-MBO data purchased: 2025-09-01 to 2025-12-28 (GLBX.MDP3, ~60GB).
-Stored at: X9 Pro/raw-market-data/es-futures/mbo/
+MBO data purchased: 2025-01-05 to 2025-12-28 (GLBX.MDP3, ~60GB).
+Stored at: /Volumes/X9 Pro/raw-market-data/es-futures/mbo/
 
 ## Final results summary
 
@@ -110,6 +115,7 @@ es-futures-microstructure/
     /data        — data documentation only, no raw files
     /src         — clean reusable Python modules
         data_loader.py         — data loading, cleaning, stats, plotting
+        final_improvements.py  — Phase 0 quality improvements pipeline
         formal_analysis.py     — Phase 4 formal regression pipeline
         plot_signals.py        — Phase 3 signal component plots
         signal_construction.py — signal and regime score functions
@@ -148,8 +154,12 @@ es-futures-microstructure/
             subsample_oct_dec_regression.txt
             key_coefficients.csv
             transaction_cost_analysis.txt
+        /final-improvements  — Phase 0 quality improvement outputs
+            p0_1_primary_no_lag_return.txt
+            p0_2_threshold_sensitivity.txt
+            p0_key_results.csv
     /paper
-        es-futures-microstructure.pdf  — final working paper (27 pages)
+        es_regime_tfi_trades.pdf       — final working paper (27 pages)
         PAPER.md                       — working paper source
         phase2_development.md          — Phase 2 research development
         phase4_findings.md             — Phase 4 complete findings record
@@ -174,7 +184,7 @@ Language explains concepts from first principles. This is
 where general knowledge lives, not project-specific results.
 
 PAPER.md — formal working paper source. Final version produced
-as es-futures-microstructure.pdf.
+as es_regime_tfi_trades.pdf.
 
 phase4_findings.md — complete internal record of all Phase 4
 test results, interpretations, diagnostic outputs, and design
@@ -232,13 +242,13 @@ Final result: β₃ = 0.000371, p = 0.234 — null efficiency finding.
 ## Data
 - Source: Databento, GLBX.MDP3, Trades schema
 - In-sample: 2025-05-01 to 2025-12-30 (169 trading days)
-  Location: ~/Desktop/Quant Research Project/raw-data/trades/
+  Location: /Volumes/X9 Pro/raw-market-data/es-futures/trades/
             GLBX-20250501-20251231/
 - Out-of-sample: 2026-01-02 to 2026-03-06 (46 trading days)
-  Location: ~/Desktop/Quant Research Project/raw-data/trades/
+  Location: /Volumes/X9 Pro/raw-market-data/es-futures/trades/
             GLBX-20260101-20260309/
 - MBO data (Paper 2): 2025-01-05 to 2025-12-28
-  Location: ~/Desktop/Quant Research Project/raw-data/mbo/
+  Location: /Volumes/X9 Pro/raw-market-data/es-futures/mbo/
 - Fields used: ts_event_et (Eastern time), price, size,
   side (B/A/N)
 - Fields ignored: rtype, publisher_id, instrument_id, action,

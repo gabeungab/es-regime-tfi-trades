@@ -1649,7 +1649,46 @@ Start Project 2, Phase 0.
 
 ---
 
-## 2026-05-21
+## 2026-06-04
+
+**Session Summary:**
+For the last 3 days (forgot to make entries / add to git):
+- Began Project 2, Phase 0. Created final_improvements.py in src/
+  with full pipeline structure (P0-1 through P0-7) and
+  results/final-improvements/ output directory.
+- Resolved environment issues before first run: python3 now points
+  to Python 3.14.4 (no packages); must use python3.13. External SSD
+  mounts at /Volumes/X9 Pro/, not ~/Desktop/X9 Pro/.
+- Completed P0-1 (R² Decomposition) and P0-2 (Threshold Sensitivity).
+  Outputs committed to results/final-improvements/. PAPER.md updated
+  with P0-1 clarification sentence (Section 5.1) and new Section 6.3
+  for P0-2 threshold sensitivity table.
+
+**Findings:**
+P0-1 — R² Decomposition:
+- R² without lag_return = 0.000275 vs. 0.236 with it. Mean-reversion
+  control accounts for 99.9% of explained variance; regime-TFI
+  interaction accounts for essentially none.
+- Diagnostic byproduct: removing lag_return produces β₃ = −0.001271
+  (highly significant, negative) — omitted variable bias artifact,
+  confirming lag_return is essential for proper inference on the
+  interaction term.
+
+P0-2 — Threshold Sensitivity:
+- Detector validation β₃ significant at p < 0.001 at all three
+  thresholds: 0.001226 (0.4, 2.061×), 0.001525 (0.5, 2.278×),
+  0.001937 (0.6, 2.553×). Validation result is robust to threshold
+  choice; monotonic increase is expected behavior of a continuous score.
+
+**Open questions:**
+None
+
+**Next step:**
+P0-3 — Additive Combination Robustness.
+
+---
+
+## 2026-06-05
 
 **Session Summary:**
 - 
