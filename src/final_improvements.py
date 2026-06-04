@@ -13,7 +13,7 @@ to the script's location (i.e., one level up from src/).
 
 Phase 0 code items:
     P0-1  R² Decomposition                         [IMPLEMENTED]
-    P0-2  Threshold Sensitivity                    [PENDING]
+    P0-2  Threshold Sensitivity                    [IMPLEMENTED]
     P0-3  Additive Combination Robustness          [PENDING]
     P0-4  Lambda and TAR Window Sensitivity        [PENDING]
     P0-5  Expanded Announcement Exclusion Set      [PENDING]
@@ -25,7 +25,7 @@ and are not implemented here.
 
 Outputs written to results/final-improvements/:
     p0_1_primary_no_lag_return.txt
-    p0_2_threshold_sensitivity.txt         [PENDING]
+    p0_2_threshold_sensitivity.txt
     p0_3_additive_regression.txt           [PENDING]
     p0_4_window_sensitivity.csv            [PENDING]
     p0_5_expanded_exclusion.txt            [PENDING]
@@ -309,20 +309,103 @@ _save_model(model_p01_without, 'p0_1_primary_no_lag_return.txt')
 _collect_rows(model_p01_without, 'p0_1_no_lag_return', key_results_rows)
 
 # =============================================================================
-# P0-2 — THRESHOLD SENSITIVITY                                   [PENDING]
+# P0-2 — THRESHOLD SENSITIVITY
 # =============================================================================
-# Stress-test the high-regime threshold of 0.5. Re-run the detector
+# Stress-test the high-regime threshold of 0.5 by re-running the detector
 # validation regression (Equation 5) at thresholds 0.4, 0.5, and 0.6.
-# Report percentage of bars classified as high-regime at each threshold.
+# Reports β₃ (within-bar TFI-return amplification), z-stat, p-value,
+# amplification ratio, and high-regime bar fraction at each threshold.
+# Threshold 0.5 row serves as a sanity check against the original result.
 #
 # Required outputs:
-#   p0_2_threshold_sensitivity.txt
-#   p0_key_results.csv  (rows appended)
+#   p0_2_threshold_sensitivity.txt   — comparison table + full summaries
+#   p0_key_results.csv               — validation regression rows appended
 
 print("\n" + "=" * 60)
-print("P0-2 — THRESHOLD SENSITIVITY                              [PENDING]")
+print("P0-2 — THRESHOLD SENSITIVITY")
 print("=" * 60)
-print("  Not yet implemented — skipped.")
+
+_P02_THRESHOLDS   = [0.4, 0.5, 0.6]
+_P02_VAL_VARS     = ['tfi', 'high_regime_dummy', 'tfi_x_high_regime', 'lag_tfi']
+_P02_ORIG_B3      = 0.001525   # original β₃ from formal_analysis.py Section 3
+
+p02_records = []
+
+for thresh in _P02_THRESHOLDS:
+    reg_val = reg.copy()
+    reg_val['high_regime_dummy'] = (reg_val['regime_score'] > thresh).astype(float)
+    reg_val['tfi_x_high_regime'] = reg_val['tfi'] * reg_val['high_regime_dummy']
+
+    model_p02 = _fit_ols(reg_val['lag_return'], _P02_VAL_VARS, reg_val)
+
+    b1  = model_p02.params['tfi']
+    b3  = model_p02.params['tfi_x_high_regime']
+    z3  = model_p02.tvalues['tfi_x_high_regime']
+    p3  = model_p02.pvalues['tfi_x_high_regime']
+    hi_frac = reg_val['high_regime_dummy'].mean()
+    amp = (b1 + b3) / b1 if b1 != 0 else float('nan')
+
+    p02_records.append({
+        'thresh': thresh, 'hi_frac': hi_frac,
+        'b3': b3, 'z3': z3, 'p3': p3, 'amp': amp,
+        'model': model_p02,
+    })
+
+    # Collect all validation variables for p0_key_results.csv.
+    # Uses inline append rather than _collect_rows because variable names
+    # differ from KEY_VARS (validation regression uses different regressors).
+    for var in _P02_VAL_VARS:
+        if var not in model_p02.params:
+            continue
+        key_results_rows.append({
+            'model':     f'p0_2_validation_t{thresh:.1f}',
+            'variable':  var,
+            'coeff':     model_p02.params[var],
+            't_stat':    model_p02.tvalues[var],
+            'p_value':   model_p02.pvalues[var],
+            'r_squared': model_p02.rsquared,
+            'n_obs':     int(model_p02.nobs),
+        })
+
+# Comparison table
+print(f"\n  Detector validation (Eq. 5) by threshold | N = {int(p02_records[0]['model'].nobs):,}")
+print(f"  {'Threshold':<11} {'High-regime %':>14} {'β₃':>12} {'z-stat':>8} {'p-value':>10} {'Amplif.':>9}")
+print(f"  {'-' * 69}")
+for r in p02_records:
+    sig = '***' if r['p3'] < 0.01 else '**' if r['p3'] < 0.05 else '*' if r['p3'] < 0.10 else ''
+    print(f"  {r['thresh']:<11.1f} {r['hi_frac'] * 100:>13.1f}%  "
+          f"{r['b3']:>12.6f} {r['z3']:>8.3f} {r['p3']:>10.4f} {sig:<3} "
+          f"{r['amp']:>8.3f}x")
+
+# Sanity check at threshold = 0.5
+_r05 = next(r for r in p02_records if r['thresh'] == 0.5)
+if abs(_r05['b3'] - _P02_ORIG_B3) < 0.0001:
+    print(f"\n  Sanity check (threshold=0.5): β₃ = {_r05['b3']:.6f} "
+          f"(expected ≈ {_P02_ORIG_B3}) ✓")
+else:
+    print(f"\n  WARNING: threshold=0.5 β₃ = {_r05['b3']:.6f} "
+          f"does not match expected ≈ {_P02_ORIG_B3}.")
+
+# Save: compact comparison table followed by full summaries for all thresholds
+_p02_path = os.path.join(RESULTS_DIR, 'p0_2_threshold_sensitivity.txt')
+with open(_p02_path, 'w') as _f:
+    _f.write("P0-2 THRESHOLD SENSITIVITY — DETECTOR VALIDATION REGRESSION (EQ. 5)\n")
+    _f.write("=" * 70 + "\n\n")
+    _f.write(f"{'Threshold':<11} {'High-regime %':>14} {'beta_3':>12} "
+             f"{'z-stat':>8} {'p-value':>10} {'Amplif.':>9}\n")
+    _f.write("-" * 68 + "\n")
+    for r in p02_records:
+        sig = '***' if r['p3'] < 0.01 else '**' if r['p3'] < 0.05 else '*' if r['p3'] < 0.10 else ''
+        _f.write(f"{r['thresh']:<11.1f} {r['hi_frac'] * 100:>13.1f}%  "
+                 f"{r['b3']:>12.6f} {r['z3']:>8.3f} {r['p3']:>10.4f} {sig:<3} "
+                 f"{r['amp']:>8.3f}x\n")
+    for r in p02_records:
+        _f.write(f"\n{'=' * 60}\n")
+        _f.write(f"Full summary — threshold = {r['thresh']:.1f}\n")
+        _f.write(f"{'=' * 60}\n")
+        _f.write(str(r['model'].summary()))
+        _f.write("\n")
+print(f"  Saved: p0_2_threshold_sensitivity.txt")
 
 # =============================================================================
 # P0-3 — ADDITIVE COMBINATION ROBUSTNESS                         [PENDING]

@@ -1,0 +1,104 @@
+P0-2 THRESHOLD SENSITIVITY — DETECTOR VALIDATION REGRESSION (EQ. 5)
+======================================================================
+
+Threshold    High-regime %       beta_3   z-stat    p-value   Amplif.
+--------------------------------------------------------------------
+0.4                  17.9%      0.001226    9.559     0.0000 ***    2.061x
+0.5                  12.1%      0.001525    9.496     0.0000 ***    2.278x
+0.6                   6.6%      0.001937    8.069     0.0000 ***    2.553x
+
+============================================================
+Full summary — threshold = 0.4
+============================================================
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:             lag_return   R-squared:                       0.009
+Model:                            OLS   Adj. R-squared:                  0.009
+Method:                 Least Squares   F-statistic:                     212.5
+Date:                Thu, 04 Jun 2026   Prob (F-statistic):          2.90e-181
+Time:                        15:38:01   Log-Likelihood:             2.7467e+05
+No. Observations:               55634   AIC:                        -5.493e+05
+Df Residuals:                   55629   BIC:                        -5.493e+05
+Df Model:                           4                                         
+Covariance Type:                  HAC                                         
+=====================================================================================
+                        coef    std err          z      P>|z|      [0.025      0.975]
+-------------------------------------------------------------------------------------
+const              1.091e-06   3.84e-06      0.285      0.776   -6.43e-06    8.61e-06
+tfi                   0.0012   7.05e-05     16.398      0.000       0.001       0.001
+high_regime_dummy -4.775e-06   8.64e-06     -0.553      0.580   -2.17e-05    1.22e-05
+tfi_x_high_regime     0.0012      0.000      9.559      0.000       0.001       0.001
+lag_tfi              -0.0001   6.21e-05     -1.853      0.064      -0.000    6.63e-06
+==============================================================================
+Omnibus:                    13821.777   Durbin-Watson:                   2.973
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):          1035665.254
+Skew:                          -0.020   Prob(JB):                         0.00
+Kurtosis:                      24.137   Cond. No.                         24.2
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity and autocorrelation robust (HAC) using 5 lags and without small sample correction
+
+============================================================
+Full summary — threshold = 0.5
+============================================================
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:             lag_return   R-squared:                       0.009
+Model:                            OLS   Adj. R-squared:                  0.009
+Method:                 Least Squares   F-statistic:                     190.9
+Date:                Thu, 04 Jun 2026   Prob (F-statistic):          8.22e-163
+Time:                        15:38:01   Log-Likelihood:             2.7468e+05
+No. Observations:               55634   AIC:                        -5.493e+05
+Df Residuals:                   55629   BIC:                        -5.493e+05
+Df Model:                           4                                         
+Covariance Type:                  HAC                                         
+=====================================================================================
+                        coef    std err          z      P>|z|      [0.025      0.975]
+-------------------------------------------------------------------------------------
+const              2.054e-06   3.61e-06      0.568      0.570   -5.03e-06    9.14e-06
+tfi                   0.0012   6.66e-05     17.907      0.000       0.001       0.001
+high_regime_dummy -1.372e-05   1.11e-05     -1.233      0.218   -3.55e-05    8.09e-06
+tfi_x_high_regime     0.0015      0.000      9.496      0.000       0.001       0.002
+lag_tfi              -0.0001   6.21e-05     -1.875      0.061      -0.000    5.25e-06
+==============================================================================
+Omnibus:                    13821.833   Durbin-Watson:                   2.973
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):          1035578.175
+Skew:                          -0.021   Prob(JB):                         0.00
+Kurtosis:                      24.136   Cond. No.                         28.3
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity and autocorrelation robust (HAC) using 5 lags and without small sample correction
+
+============================================================
+Full summary — threshold = 0.6
+============================================================
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:             lag_return   R-squared:                       0.009
+Model:                            OLS   Adj. R-squared:                  0.009
+Method:                 Least Squares   F-statistic:                     171.5
+Date:                Thu, 04 Jun 2026   Prob (F-statistic):          2.84e-146
+Time:                        15:38:01   Log-Likelihood:             2.7467e+05
+No. Observations:               55634   AIC:                        -5.493e+05
+Df Residuals:                   55629   BIC:                        -5.493e+05
+Df Model:                           4                                         
+Covariance Type:                  HAC                                         
+=====================================================================================
+                        coef    std err          z      P>|z|      [0.025      0.975]
+-------------------------------------------------------------------------------------
+const              8.042e-07   3.39e-06      0.237      0.813   -5.84e-06    7.45e-06
+tfi                   0.0012   6.37e-05     19.580      0.000       0.001       0.001
+high_regime_dummy -5.599e-06   1.55e-05     -0.361      0.718    -3.6e-05    2.48e-05
+tfi_x_high_regime     0.0019      0.000      8.069      0.000       0.001       0.002
+lag_tfi              -0.0001   6.21e-05     -1.876      0.061      -0.000    5.19e-06
+==============================================================================
+Omnibus:                    13822.063   Durbin-Watson:                   2.973
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):          1035792.016
+Skew:                          -0.020   Prob(JB):                         0.00
+Kurtosis:                      24.138   Cond. No.                         37.1
+==============================================================================
+
+Notes:
+[1] Standard Errors are heteroscedasticity and autocorrelation robust (HAC) using 5 lags and without small sample correction
