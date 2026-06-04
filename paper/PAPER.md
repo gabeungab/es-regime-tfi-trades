@@ -679,7 +679,9 @@ regime does not amplify this unconditional predictability — β₃ is
 indistinguishable from zero. The dominant source of return
 predictability is the mean-reversion control lag_return (β₄ = −0.488,
 p < 0.001), capturing bid-ask bounce; R² = 0.236 is driven almost
-entirely by this term.
+entirely by this term. Without the mean-reversion control, 
+R² = 0.000275, confirming that the regime-TFI interaction accounts 
+for essentially none of the return variance.
 
 The quintile interaction analysis in Section 5.4 confirms this null
 result is not an artifact of the linearity assumption in the
