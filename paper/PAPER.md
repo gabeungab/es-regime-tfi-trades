@@ -1057,6 +1057,27 @@ is mechanically inflated and the null result is the correct
 interpretation. This test is not evidence of genuine informed trader
 timing.
 
+### 6.3 Regime Detector Threshold Sensitivity
+
+The detector validation regression (Equation 5) classifies bars as
+high-regime when RegimeScore > 0.5, pre-specified as the natural
+midpoint of the [0, 1] logistic output. The following table reports
+β₃ and the within-bar TFI-return amplification ratio at thresholds
+of 0.4, 0.5, and 0.6.
+
+| Threshold | High-regime bars | β₃ | z-stat | p-value | Amplification |
+|---|---|---|---|---|---|
+| 0.4 | 17.9% | 0.001226 | 9.559 | <0.001*** | 2.061× |
+| 0.5 | 12.1% | 0.001525 | 9.496 | <0.001*** | 2.278× |
+| 0.6 | 6.6% | 0.001937 | 8.069 | <0.001*** | 2.553× |
+
+The validation finding is robust to threshold choice; β₃ is
+statistically significant at p < 0.001 at all three values. The
+monotonic increase in β₃ as the threshold tightens reflects the
+expected behavior of a continuous score; stricter thresholds select
+a smaller, more price-impact-concentrated subset of bars. This
+pattern does not indicate sensitivity to the specific threshold used.
+
 ---
 
 ## 7. Market Maker Implications
