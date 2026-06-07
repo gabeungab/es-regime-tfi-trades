@@ -14,7 +14,7 @@ to the script's location (i.e., one level up from src/).
 Phase 0 code items:
     P0-1  R² Decomposition                         [IMPLEMENTED]
     P0-2  Threshold Sensitivity                    [IMPLEMENTED]
-    P0-3  Additive Combination Robustness          [PENDING]
+    P0-3  Additive Combination Robustness          [IMPLEMENTED]
     P0-4  Lambda and TAR Window Sensitivity        [PENDING]
     P0-5  Expanded Announcement Exclusion Set      [PENDING]
     P0-6  Pre-Announcement Window Characterization [PENDING]
@@ -26,7 +26,7 @@ and are not implemented here.
 Outputs written to results/final-improvements/:
     p0_1_primary_no_lag_return.txt
     p0_2_threshold_sensitivity.txt
-    p0_3_additive_regression.txt           [PENDING]
+    p0_3_additive_regression.txt           [IMPLEMENTED]
     p0_4_window_sensitivity.csv            [PENDING]
     p0_5_expanded_exclusion.txt            [PENDING]
     p0_6_preannouncement_stats.txt         [PENDING]
@@ -165,6 +165,23 @@ def _collect_rows(fitted_model, model_label, rows):
             'r_squared': fitted_model.rsquared,
             'n_obs':     int(fitted_model.nobs),
         })
+
+
+def _rolling_zscore(series, window):
+    """Rolling z-score using only past data (min_periods=window).
+    Identical to the inner function in signal_construction.compute_regime_score.
+    Defined here at module level for use in P0-3 and P0-4.
+    """
+    mean = series.rolling(window=window, min_periods=window).mean()
+    std  = series.rolling(window=window, min_periods=window).std()
+    return (series - mean) / std.replace(0, float('nan'))
+
+
+def _logistic(z):
+    """Logistic function mapping R → (0, 1).
+    Identical to the inner function in signal_construction.compute_regime_score.
+    """
+    return 1 / (1 + np.exp(-z))
 
 
 def _build_reg_df(tfi_input, returns_input, regime_score_input):
@@ -408,7 +425,7 @@ with open(_p02_path, 'w') as _f:
 print(f"  Saved: p0_2_threshold_sensitivity.txt")
 
 # =============================================================================
-# P0-3 — ADDITIVE COMBINATION ROBUSTNESS                         [PENDING]
+# P0-3 — ADDITIVE COMBINATION ROBUSTNESS
 # =============================================================================
 # Report the additive RegimeScore result for transparency. Construct
 # additive RegimeScore as [logistic(z_lambda) + logistic(z_TAR)] / 2,
@@ -419,9 +436,70 @@ print(f"  Saved: p0_2_threshold_sensitivity.txt")
 #   p0_key_results.csv  (rows appended)
 
 print("\n" + "=" * 60)
-print("P0-3 — ADDITIVE COMBINATION ROBUSTNESS                    [PENDING]")
+print("P0-3 — ADDITIVE COMBINATION ROBUSTNESS")
 print("=" * 60)
-print("  Not yet implemented — skipped.")
+
+# --- Construct additive RegimeScore ---
+# Uses the same lambda_series and arrival_series already computed at the top.
+# Replicates the z-score and logistic logic from compute_regime_score() but
+# combines components as [logistic(z_lambda) + logistic(z_arrival)] / 2
+# (equal-weight average) instead of the multiplicative product.
+_LAMBDA_WINDOW_P03  = 30   # same as compute_regime_score default
+_ARRIVAL_WINDOW_P03 = 5    # same as compute_regime_score default
+
+_z_lambda_p03  = _rolling_zscore(lambda_series,  _LAMBDA_WINDOW_P03)
+_z_arrival_p03 = _rolling_zscore(arrival_series, _ARRIVAL_WINDOW_P03)
+
+regime_score_additive = (
+    _logistic(_z_lambda_p03) + _logistic(_z_arrival_p03)
+) / 2
+
+# Apply identical exclusion mask — excluded bars set to 0.0.
+_excl_p03 = exclusion_mask.reindex(regime_score_additive.index, fill_value=False)
+regime_score_additive = regime_score_additive.where(~_excl_p03, other=0.0)
+
+# --- Build regression DataFrame ---
+reg_p03 = _build_reg_df(tfi, returns, regime_score_additive)
+reg_p03 = reg_p03.dropna(subset=REGRESSION_COLS)
+
+_hi_frac_add = (reg_p03['regime_score'] > 0.5).mean()
+print(f"\n  Additive high-regime (>0.5) share: {_hi_frac_add * 100:.1f}%"
+      f"  (multiplicative: 12.1%)")
+
+# --- Primary regression with additive RegimeScore ---
+model_p03 = _fit_ols(reg_p03['fwd_return'], PRIMARY_COLS, reg_p03)
+
+print(f"\n  Additive primary regression (N = {int(model_p03.nobs):,}):")
+_print_coeff_table(model_p03, ['const'] + PRIMARY_COLS)
+
+# --- Side-by-side β₃ comparison ---
+_b3_mult = 0.000371
+_z3_mult = 1.191
+_p3_mult = 0.234
+_b3_add  = model_p03.params['tfi_x_regime']
+_z3_add  = model_p03.tvalues['tfi_x_regime']
+_p3_add  = model_p03.pvalues['tfi_x_regime']
+
+_sig = lambda p: '***' if p < 0.01 else '**' if p < 0.05 else '*' if p < 0.10 else ''
+
+print(f"\n  β₃ comparison — multiplicative vs. additive:")
+print(f"  {'Formulation':<30} {'β₃':>12} {'z-stat':>8} {'p-value':>10}")
+print(f"  {'-' * 62}")
+print(f"  {'Multiplicative (main)':<30} {_b3_mult:>12.6f} {_z3_mult:>8.3f} "
+      f"{_p3_mult:>10.4f} {_sig(_p3_mult)}")
+print(f"  {'Additive':<30} {_b3_add:>12.6f} {_z3_add:>8.3f} "
+      f"{_p3_add:>10.4f} {_sig(_p3_add)}")
+
+# Sanity check: N should match multiplicative regression sample
+_N_MULT = 55634
+if abs(int(model_p03.nobs) - _N_MULT) > 100:
+    print(f"\n  WARNING: N = {int(model_p03.nobs):,} differs from "
+          f"multiplicative N = {_N_MULT:,}. Verify pipeline.")
+else:
+    print(f"\n  Sanity check: N = {int(model_p03.nobs):,} (expected ≈ {_N_MULT:,}) ✓")
+
+_save_model(model_p03, 'p0_3_additive_regression.txt')
+_collect_rows(model_p03, 'p0_3_additive', key_results_rows)
 
 # =============================================================================
 # P0-4 — LAMBDA AND TAR WINDOW SENSITIVITY                       [PENDING]
