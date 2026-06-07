@@ -1078,6 +1078,25 @@ expected behavior of a continuous score; stricter thresholds select
 a smaller, more price-impact-concentrated subset of bars. This
 pattern does not indicate sensitivity to the specific threshold used.
 
+### 6.4 Additive Combination Robustness
+
+The multiplicative formulation of RegimeScore was adopted on theoretical
+grounds before formal regressions were run (Section 4.5). For
+transparency, the primary regression is re-estimated using an additive
+formulation: RegimeScore_t = [logistic(z_lambda_t) + logistic(z_arrival_t)] / 2.
+The two formulations classify substantially different fractions of bars
+as high-regime (>0.5), for a structural reason: averaging two logistic
+outputs centered at 0.5 produces a distribution centered near 0.5, whereas
+the multiplicative product is far more selective.
+
+| Formulation | High-regime | β₃ | z-stat | p-value | N |
+|---|---|---|---|---|---|
+| Multiplicative (main) | 12.1% | 0.000371 | 1.191 | 0.234 | 55,634 |
+| Additive | 43.1% | 0.000187 | 0.451 | 0.652 | 55,634 |
+
+The null result holds under both formulations. The primary efficiency
+finding is not sensitive to the choice of combination rule.
+
 ---
 
 ## 7. Market Maker Implications
