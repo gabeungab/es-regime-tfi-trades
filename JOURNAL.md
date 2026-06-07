@@ -1688,7 +1688,39 @@ P0-3 — Additive Combination Robustness.
 
 ---
 
-## 2026-06-05
+## 2026-06-06
+
+**Session Summary:**
+- Implemented P0-3 (Additive Combination Robustness) in
+  final_improvements.py. Added _rolling_zscore and _logistic as
+  module-level helper functions (reused in P0-4).
+- Ran analysis and discussed interpretation of additive vs.
+  multiplicative β₃ difference.
+- Added Section 6.4 to PAPER.md robustness section with
+  two-row comparison table.
+
+**Findings:**
+P0-3 additive combination result:
+- Additive high-regime (>0.5) share: 43.1% vs 12.1% multiplicative.
+  Not a substantive finding; structural property of averaging two
+  logistic outputs centered at 0.5, which produces a distribution
+  centered near 0.5 by construction.
+- Additive β₃ = 0.000187, z = 0.451, p = 0.652 — null.
+  Multiplicative β₃ = 0.000371, p = 0.234 — null.
+- Primary efficiency finding is formulation-independent. The
+  smaller additive β₃ is consistent with either reduced circularity
+  amplification or signal dilution from a less selective formulation,
+  but cannot be confirmed as either because both are null.
+
+**Open questions:**
+None
+
+**Next step:**
+P0-4 — Lambda and TAR Window Sensitivity.
+
+---
+
+## 2026-06-07
 
 **Session Summary:**
 - 
