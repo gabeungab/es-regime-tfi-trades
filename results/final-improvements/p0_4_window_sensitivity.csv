@@ -1,0 +1,9 @@
+spec,lambda_window,tar_window,subsample,n_obs,beta3,p_value
+lambda_15_tar5,15,5,full,60344,0.00082558,0.00598530
+lambda_15_tar5_stable,15,5,stable,19912,0.00059686,0.21498002
+lambda_30_tar5,30,5,full,55634,0.00037133,0.23373163
+lambda_30_tar5_stable,30,5,stable,18355,0.00101593,0.03275664
+lambda_60_tar5,60,5,full,46214,0.00059938,0.07951406
+lambda_60_tar5_stable,60,5,stable,15241,0.00129143,0.00874784
+lambda_30_tar3,30,3,full,55634,0.00038870,0.24251846
+lambda_30_tar10,30,10,full,55634,0.00041368,0.15673157

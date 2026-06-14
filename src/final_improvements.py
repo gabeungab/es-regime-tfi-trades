@@ -514,9 +514,142 @@ _collect_rows(model_p03, 'p0_3_additive', key_results_rows)
 #   p0_key_results.csv  (rows appended)
 
 print("\n" + "=" * 60)
-print("P0-4 — LAMBDA AND TAR WINDOW SENSITIVITY                  [PENDING]")
+print("P0-4 — LAMBDA AND TAR WINDOW SENSITIVITY")
 print("=" * 60)
-print("  Not yet implemented — skipped.")
+
+# Signed order flow per 1-minute bar — used for the rolling std stability
+# metric in stable-conditions sub-analyses. Identical computation to
+# _compute_signed_flow() in formal_analysis.py. df_indexed is already
+# set at the top of this script (line ~241).
+_signed_flow_p04 = (
+    df_indexed.groupby(pd.Grouper(freq='1min'))
+    .apply(lambda x: float(x.loc[x['side'] == 'B', 'size'].sum())
+                   - float(x.loc[x['side'] == 'A', 'size'].sum()))
+    .rename('signed_flow')
+)
+
+_P04_LAMBDA_WINDOWS = [15, 30, 60]
+_P04_TAR_WINDOWS    = [3, 5, 10]
+_P04_ORIG_B3        = 0.000371   # primary regression β₃ — sanity-check reference
+_P04_ORIG_P         = 0.234      # primary regression p-value — sanity-check reference
+
+p04_rows = []
+
+
+# ── Lambda window sweep — TAR fixed at 5 ─────────────────────────────────────
+print(f"\n  Lambda window sweep (TAR window = 5):")
+print(f"  {'lambda_win':>10} {'subsample':>10} {'N':>7} {'beta3':>12} {'p-value':>10}")
+print(f"  {'-' * 55}")
+
+for _lw in _P04_LAMBDA_WINDOWS:
+    # Recompute lambda and regime score at this window length.
+    # TAR series and exclusion mask reuse the values computed at the top.
+    _lambda_lw = compute_lambda(df_clean, window=_lw)
+    _rs_lw     = compute_regime_score(_lambda_lw, arrival_series, exclusion_mask,
+                                      lambda_window=_lw, arrival_window=5)
+    _reg_lw    = _build_reg_df(tfi, returns, _rs_lw).dropna(subset=REGRESSION_COLS)
+    _model_lw  = _fit_ols(_reg_lw['fwd_return'], PRIMARY_COLS, _reg_lw)
+
+    _b3_lw = _model_lw.params['tfi_x_regime']
+    _pv_lw = _model_lw.pvalues['tfi_x_regime']
+    _N_lw  = int(_model_lw.nobs)
+
+    print(f"  {_lw:>10} {'full':>10} {_N_lw:>7,} {_b3_lw:>12.6f} {_pv_lw:>10.4f}")
+
+    # Baseline verification — λ=30, TAR=5 must reproduce primary regression.
+    if _lw == 30:
+        if abs(_b3_lw - _P04_ORIG_B3) < 0.0001 and abs(_pv_lw - _P04_ORIG_P) < 0.01:
+            print(f"  Sanity check (λ=30): β₃={_b3_lw:.6f}  p={_pv_lw:.4f} ✓")
+        else:
+            print(f"  WARNING: λ=30 baseline does not reproduce primary result.")
+            print(f"    Got β₃={_b3_lw:.6f}  p={_pv_lw:.4f}")
+            print(f"    Expected β₃≈{_P04_ORIG_B3}  p≈{_P04_ORIG_P}")
+            print(f"    Verify that the pipeline here matches formal_analysis.py.")
+
+    p04_rows.append({
+        'spec':          f'lambda_{_lw}_tar5',
+        'lambda_window': _lw,
+        'tar_window':    5,
+        'subsample':     'full',
+        'n_obs':         _N_lw,
+        'beta3':         _b3_lw,
+        'p_value':       _pv_lw,
+    })
+    _collect_rows(_model_lw, f'p0_4_lambda{_lw}_tar5', key_results_rows)
+
+    # ── Stable-conditions sub-analysis at this lambda window ──────────────────
+    # Rolling std window matches the lambda estimation window — the stability
+    # metric measures signed-flow variability over the same window length used
+    # by the lambda OLS estimate. min_periods = window // 2, consistent with
+    # formal_analysis.py Section 5 (rolling(30, min_periods=15)).
+    _sf_lw = _signed_flow_p04.reindex(_reg_lw.index)
+    _lws   = _sf_lw.rolling(_lw, min_periods=max(1, _lw // 2)).std()
+
+    _reg_lw_s            = _reg_lw.copy()
+    _reg_lw_s['_lws']    = _lws
+    _p33_lw              = _reg_lw_s['_lws'].quantile(0.33)
+    _reg_stable_lw       = _reg_lw_s[_reg_lw_s['_lws'] <= _p33_lw].dropna(
+                               subset=REGRESSION_COLS)
+    _model_stable_lw     = _fit_ols(_reg_stable_lw['fwd_return'], PRIMARY_COLS,
+                                    _reg_stable_lw)
+
+    _b3s_lw = _model_stable_lw.params['tfi_x_regime']
+    _pvs_lw = _model_stable_lw.pvalues['tfi_x_regime']
+    _Ns_lw  = int(_model_stable_lw.nobs)
+
+    print(f"  {_lw:>10} {'stable':>10} {_Ns_lw:>7,} {_b3s_lw:>12.6f} {_pvs_lw:>10.4f}"
+          f"  (threshold={_p33_lw:.2f})")
+
+    p04_rows.append({
+        'spec':          f'lambda_{_lw}_tar5_stable',
+        'lambda_window': _lw,
+        'tar_window':    5,
+        'subsample':     'stable',
+        'n_obs':         _Ns_lw,
+        'beta3':         _b3s_lw,
+        'p_value':       _pvs_lw,
+    })
+    _collect_rows(_model_stable_lw, f'p0_4_lambda{_lw}_tar5_stable', key_results_rows)
+
+
+# ── TAR window sweep — lambda fixed at 30 ────────────────────────────────────
+# TAR=5 is skipped — already captured as lambda_30_tar5 in the lambda sweep.
+print(f"\n  TAR window sweep (lambda window = 30):")
+print(f"  {'tar_win':>10} {'subsample':>10} {'N':>7} {'beta3':>12} {'p-value':>10}")
+print(f"  {'-' * 55}")
+
+for _tw in _P04_TAR_WINDOWS:
+    if _tw == 5:
+        continue  # Already computed as lambda_30_tar5 in the lambda sweep.
+
+    _arrival_tw = compute_arrival_rate(df_clean, window=_tw)
+    _rs_tw      = compute_regime_score(lambda_series, _arrival_tw, exclusion_mask,
+                                       lambda_window=30, arrival_window=_tw)
+    _reg_tw     = _build_reg_df(tfi, returns, _rs_tw).dropna(subset=REGRESSION_COLS)
+    _model_tw   = _fit_ols(_reg_tw['fwd_return'], PRIMARY_COLS, _reg_tw)
+
+    _b3_tw = _model_tw.params['tfi_x_regime']
+    _pv_tw = _model_tw.pvalues['tfi_x_regime']
+    _N_tw  = int(_model_tw.nobs)
+
+    print(f"  {_tw:>10} {'full':>10} {_N_tw:>7,} {_b3_tw:>12.6f} {_pv_tw:>10.4f}")
+
+    p04_rows.append({
+        'spec':          f'lambda_30_tar{_tw}',
+        'lambda_window': 30,
+        'tar_window':    _tw,
+        'subsample':     'full',
+        'n_obs':         _N_tw,
+        'beta3':         _b3_tw,
+        'p_value':       _pv_tw,
+    })
+    _collect_rows(_model_tw, f'p0_4_lambda30_tar{_tw}', key_results_rows)
+
+
+# ── Save CSV ──────────────────────────────────────────────────────────────────
+_p04_path = os.path.join(RESULTS_DIR, 'p0_4_window_sensitivity.csv')
+pd.DataFrame(p04_rows).to_csv(_p04_path, index=False, float_format='%.8f')
+print(f"\n  Saved: p0_4_window_sensitivity.csv  ({len(p04_rows)} rows)")
 
 # =============================================================================
 # P0-5 — EXPANDED ANNOUNCEMENT EXCLUSION SET                     [PENDING]
