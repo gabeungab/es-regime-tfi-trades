@@ -1097,6 +1097,56 @@ the multiplicative product is far more selective.
 The null result holds under both formulations. The primary efficiency
 finding is not sensitive to the choice of combination rule.
 
+### 6.5 Lambda and TAR Window Sensitivity
+
+The regime detector uses a 30-bar rolling OLS window for Kyle's lambda
+and a 5-bar rolling mean for the trade arrival rate, both pre-specified
+in Section 4.3. The following tables report primary regression β₃ and
+p-value when each window is varied while the other is held fixed. The
+stable-conditions analysis from Section 5.5 is re-run at each lambda
+window length with the rolling signed-flow standard deviation window
+matched to the lambda estimation window.
+
+Lambda window sensitivity (TAR window fixed at 5):
+
+| λ window | N (full) | β₃ (full) | p (full) | N (stable) | β₃ (stable) | p (stable) |
+|---|---|---|---|---|---|---|
+| 15 | 60,344 | 0.000826 | 0.006** | 19,912 | 0.000597 | 0.215 |
+| 30 (main) | 55,634 | 0.000371 | 0.234 | 18,355 | 0.001016 | 0.033* |
+| 60 | 46,214 | 0.000599 | 0.080 | 15,241 | 0.001291 | 0.009** |
+
+TAR window sensitivity (lambda window fixed at 30):
+
+| TAR window | N | β₃ | p-value |
+|---|---|---|---|
+| 3 | 55,634 | 0.000389 | 0.243 |
+| 5 (main) | 55,634 | 0.000371 | 0.234 |
+| 10 | 55,634 | 0.000414 | 0.157 |
+
+The TAR window result is insensitive to window choice; β₃ ranges from
+0.000371 to 0.000414 and all three specifications are null (p > 0.15).
+The primary null result does not depend on the TAR smoothing parameter.
+
+However, the full-sample result is sensitive to the choice of lambda
+estimation window. At λ = 30, the primary null holds (p = 0.234). At
+λ = 15, the full-sample result is significant (p = 0.006); at λ = 60,
+it is marginal (p = 0.080). Observation counts differ because the
+rolling OLS warmup matches the window length, yielding 60,344 bars at
+λ = 15 and 46,214 bars at λ = 60. Shorter lambda windows increase the
+overlap between the lambda estimation sample and the current bar's
+signed order flow. Since signed order flow is the same input as TFI,
+this amplifies the first circularity layer documented in Section 4.5.
+The stable-conditions pattern is consistent with this explanation; at
+λ = 15 the full-sample significant result reverses to null under the
+stability filter (p = 0.215), whereas at λ = 30 and λ = 60 the
+opposite holds, with a null full-sample result and significant
+stable-conditions results (p = 0.033 and p = 0.009 respectively). The
+λ = 15 full-sample significance is therefore attributable to heightened
+circularity rather than independent evidence of regime-conditioned
+forward predictability. The stable-conditions finding from Section 5.5
+is reinforced at λ = 60 (β₃ = 0.001291, p = 0.009), carrying the same
+post-hoc caveat and the same out-of-sample null.
+
 ---
 
 ## 7. Market Maker Implications
