@@ -1720,7 +1720,40 @@ P0-4 — Lambda and TAR Window Sensitivity.
 
 ---
 
-## 2026-06-07
+## 2026-06-14
+
+**Session Summary:**
+- Implemented P0-4 (Lambda & TAR Window Sensitivity) in 
+  final_improvements.py,replacing the stub with the full lambda sweep 
+  [15, 30, 60] and TAR sweep [3, 5, 10] loops, including stable-conditions 
+  re-runs at each lambda window length.
+- Ran the script; sanity check confirmed λ=30 baseline reproduces primary 
+  result (β₃=0.000371, p=0.234).
+- Added Section 6.5 to PAPER.md in the robustness section.
+
+**Findings:**
+- TAR window is a non-issue: β₃ ranges 0.000371–0.000414 across TAR=3,5,10, 
+  all null (p > 0.15). Primary null does not depend on TAR smoothing choice.
+- Lambda window shows real sensitivity in the full-sample result: λ=15 
+  significant (p=0.006), λ=30 null (p=0.234), λ=60 marginal (p=0.080).
+- The stable-conditions pattern reverses at λ=15: full-sample significant 
+  but stable null (p=0.215), opposite of λ=30 and λ=60 where full is null and 
+  stable is significant (p=0.033 and p=0.009). This is consistent with 
+  circularity amplification at short windows driving the λ=15 full-sample 
+  result, not genuine signal.
+- λ=60 stable-conditions result (β₃=0.001291, p=0.009) is the strongest stable 
+  finding across all configurations — reinforces the Section 5.5 result but 
+  same post-hoc caveat applies.
+
+**Open questions:**
+None
+
+**Next step:**
+P0-5 — Expanded Announcement Exclusion Set
+
+---
+
+## 2026-06-15
 
 **Session Summary:**
 - 
