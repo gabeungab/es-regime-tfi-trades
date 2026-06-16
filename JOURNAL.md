@@ -1753,7 +1753,46 @@ P0-5 — Expanded Announcement Exclusion Set
 
 ---
 
-## 2026-06-15
+## 2026-06-16
+
+**Session Summary:**
+- Implemented P0-5 (Expanded Announcement Exclusion Set). Expanded
+  from FOMC/CPI/NFP to all six Andersen et al. (2007) releases:
+  added PPI (×5), retail sales (×4), advance GDP (×2), with
+  government shutdown delays applied. Added premarket_rth_shift=True
+  so pre-market releases exclude the first 30 min of RTH rather than
+  the pre-RTH interval. Added Section 6.6 to PAPER.md.
+- Implemented P0-6 (Pre-Announcement Window Characterization).
+  Computed mean RegimeScore and mean |TFI| for the 6 FOMC
+  pre-announcement windows (13:30–13:59 ET) vs. full-sample means.
+  Added descriptive footnote to Section 4.3 of PAPER.md.
+
+**Findings:**
+P0-5: β₃ = 0.000326, p = 0.291, N = 56,214. Null unchanged. N is
+580 higher than the original 55,634 — the expanded set resolves some
+NaN regime_score values to zero on announcement-day opening bars,
+admitting them to the regression. Minor artifact, no inferential
+consequence.
+
+P0-6: 2 of 6 FOMC events (June 18, September 17) fall within
+contract roll exclusion windows; RegimeScore = 0 by construction in
+those 60 bars. For the 4 non-contaminated events: mean RegimeScore
+0.275 vs. full-sample 0.215 — directionally consistent with elevated
+adverse selection, though 4 events are insufficient for inference.
+Mean |TFI| across all 6 windows: 0.097 vs. 0.090 full-sample
+(1.075×). Reported the two comparisons separately in the footnote;
+an aggregate would produce a misleading 0.183 figure driven by the
+zeroed events.
+
+**Open questions:**
+None
+
+**Next step:**
+P0-7 — Formal Bias Simulation.
+
+---
+
+## 2026-06-17
 
 **Session Summary:**
 - 

@@ -60,7 +60,11 @@ All code polished, all results regenerated, README updated.
 Phase 0 quality improvements (project2_plan.md):
 - P0-1 R² Decomposition — COMPLETE
 - P0-2 Threshold Sensitivity — COMPLETE
-- P0-3 through P0-7 — PENDING
+- P0-3 Additive Combination Robustness — COMPLETE
+- P0-4 Lambda and TAR Window Sensitivity — COMPLETE
+- P0-5 Expanded Announcement Exclusion Set — COMPLETE
+- P0-6 Pre-Announcement Window Characterization — COMPLETE
+- P0-7 Formal Bias Simulation — PENDING
 
 Next project: Paper 2 — MBO-based orthogonal regime detector study.
 MBO data purchased: 2025-01-05 to 2025-12-28 (GLBX.MDP3, ~60GB).
