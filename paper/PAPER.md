@@ -1147,6 +1147,33 @@ forward predictability. The stable-conditions finding from Section 5.5
 is reinforced at λ = 60 (β₃ = 0.001291, p = 0.009), carrying the same
 post-hoc caveat and the same out-of-sample null.
 
+### 6.6 Expanded Announcement Exclusion Set
+
+The primary specification excludes a 30-minute post-announcement window
+following each FOMC decision, CPI release, and NFP release (Section 4.3).
+Andersen, Bollerslev, Diebold, and Vega (2007) document that these three
+release types, together with PPI, advance GDP, and retail sales, generate
+the largest and most persistent intraday price responses in U.S. equity
+markets. To verify that the original exclusion set is not materially
+incomplete, the primary regression is re-run with all six release types
+excluded. For pre-market releases at 8:30 AM ET, the post-announcement
+window is shifted from the pre-RTH interval (8:30–9:00 AM, which contains
+no RTH bars in the 1-minute bar index) to the first 30 minutes of RTH
+(9:30–10:00 AM), capturing the opening period during which the pre-open
+release is priced in. Release dates reflect government-issued schedules,
+incorporating autumn 2025 shutdown-related delays where applicable.
+
+The expanded exclusion set yields β₃ = 0.000326 (p = 0.291, N = 56,214).
+The null result is unchanged. The observation count is 580 higher than the
+original sample rather than lower because the exclusion mechanism sets
+regime score to zero in excluded windows rather than dropping rows from the
+regression; the new announcement-day opening windows convert a small number
+of NaN regime-score values to zero, which resolves downstream NaN in the
+lagged regime-score term and admits those bars to the regression. This is a
+minor sample composition artifact that does not affect the inferential
+conclusion. The primary null finding does not depend on the choice of
+announcement exclusion set.
+
 ---
 
 ## 7. Market Maker Implications
@@ -1362,6 +1389,10 @@ days.
 Ahern, K. R. (2018). Do proxies for informed trading measure
 informed trading? Evidence from illegal insider trades.
 *Review of Asset Pricing Studies*, 10(3), 397–440.
+
+Andersen, T. G., Bollerslev, T., Diebold, F. X., and Vega, C. (2007).
+Real-time price discovery in global stock, bond and foreign exchange
+markets. *Journal of International Economics*, 73(1), 251–277.
 
 Cont, R., Kukanov, A., and Stoikov, S. (2014). The price impact
 of order book events. *Journal of Financial Econometrics*,
