@@ -477,7 +477,19 @@ information, and their post-announcement windows represent the
 period of greatest mechanical lambda inflation. Pre-announcement
 windows are retained; informed traders with early signal access may
 be active before announcements, and excluding these bars would
-discard potentially genuine informed trading episodes.
+discard potentially genuine informed trading episodes. 
+
+Descriptively, 2 of the 6 in-sample FOMC pre-announcement windows 
+(June 18 and September 17, 2025) fall within contract roll exclusion 
+windows, setting RegimeScore to zero by construction in those 60 bars. 
+For the remaining 4 events (May 7, July 30, October 29, December 10),
+the 30-minute pre-announcement windows contain 120 bars with mean
+RegimeScore 0.275, compared to the full-sample mean of 0.215 —
+directionally consistent with elevated adverse selection before
+announcements, though 4 events are insufficient for inference. Mean
+|TFI| across all 6 pre-announcement windows (180 bars) is 0.097
+versus 0.090 full-sample, a modest elevation unaffected by the roll
+contamination. Both comparisons are descriptive only.
 
 The final 10 minutes of each session (15:50–16:00 ET) are excluded
 due to domination by MOC order flow — mechanical, publicly announced
