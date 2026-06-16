@@ -171,7 +171,7 @@ def compute_regime_score(lambda_series, arrival_series, exclusion_mask,
     return regime_score
 
 
-def compute_exclusion_mask(bars, announcement_dates):
+def compute_exclusion_mask(bars, announcement_dates, premarket_rth_shift=False):
     """
     Build a boolean exclusion mask over the 1-minute bar index, marking
     three categories of contaminated observations:
@@ -181,11 +181,22 @@ def compute_exclusion_mask(bars, announcement_dates):
            publicly announced execution that elevates volume and lambda
            without genuine adverse selection.
 
-        2. Post-announcement windows (+30 minutes after each FOMC,
-           CPI, and NFP release): excluded because public information
-           arrival drives directional flow that mechanically inflates
-           lambda without reflecting private information. Pre-announcement
+        2. Post-announcement windows (+30 minutes after each scheduled
+           macro release): excluded because public information arrival
+           drives directional flow that mechanically inflates lambda
+           without reflecting private information. Pre-announcement
            windows are retained as potentially informed.
+
+           For intraday releases (e.g., FOMC at 14:00): the window is
+           [ann_dt, ann_dt + 30min], which falls within RTH.
+
+           For pre-market releases (e.g., CPI/NFP/PPI at 08:30): the
+           default behavior [ann_dt, ann_dt + 30min] produces a window
+           of 08:30–09:00, which falls entirely before RTH and excludes
+           zero bars. When premarket_rth_shift=True, the window is
+           shifted to the first 30 minutes of RTH on the announcement
+           day (09:30–10:00), capturing the opening period during which
+           the market is reacting to the pre-open release.
 
         3. Contract roll dates and 3 preceding trading days: excluded
            to remove structural illiquidity and mechanical volume
@@ -200,6 +211,12 @@ def compute_exclusion_mask(bars, announcement_dates):
     announcement_dates : list of pd.Timestamp
         Announcement datetimes (Eastern). Each triggers a +30-minute
         post-announcement exclusion window.
+    premarket_rth_shift : bool, optional
+        If True, pre-market announcements (time < 09:30 ET) shift their
+        exclusion window to the first 30 minutes of RTH on the
+        announcement day (09:30–10:00) rather than the pre-RTH interval
+        [ann_dt, ann_dt + 30min]. Default False preserves the original
+        behavior for backward compatibility with formal_analysis.py.
 
     Returns
     -------
@@ -221,14 +238,27 @@ def compute_exclusion_mask(bars, announcement_dates):
     mask |= (is_rth & pd.Series(index.time >= cutoff_time, index=index))
 
     # ── 2. Post-announcement windows (+30 min) ────────────────────────────────
+    _bar_dates  = pd.Series(index.date, index=index)
+    _rth_30_end = pd.Timestamp('10:00').time()
+
     for ann_dt in announcement_dates:
-        window_start = ann_dt
-        window_end   = ann_dt + pd.Timedelta(minutes=30)
-        mask |= (
-            (index >= window_start) &
-            (index <= window_end) &
-            is_rth
-        )
+        if premarket_rth_shift and ann_dt.time() < rth_open:
+            # Pre-market release: shift window to first 30 min of RTH on
+            # the announcement day (09:30–10:00) rather than 08:30–09:00.
+            ann_date = ann_dt.date()
+            mask |= (
+                (_bar_dates == ann_date) &
+                pd.Series(index.time >= rth_open,    index=index) &
+                pd.Series(index.time <  _rth_30_end, index=index)
+            )
+        else:
+            window_start = ann_dt
+            window_end   = ann_dt + pd.Timedelta(minutes=30)
+            mask |= (
+                (index >= window_start) &
+                (index <= window_end) &
+                is_rth
+            )
 
     # ── 3. Contract roll dates and 3 preceding trading days ───────────────────
     index_dates = pd.Series(index.date, index=index)

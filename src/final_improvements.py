@@ -16,7 +16,7 @@ Phase 0 code items:
     P0-2  Threshold Sensitivity                    [IMPLEMENTED]
     P0-3  Additive Combination Robustness          [IMPLEMENTED]
     P0-4  Lambda and TAR Window Sensitivity        [PENDING]
-    P0-5  Expanded Announcement Exclusion Set      [PENDING]
+    P0-5  Expanded Announcement Exclusion Set      [IMPLEMENTED]
     P0-6  Pre-Announcement Window Characterization [PENDING]
     P0-7  Formal Bias Simulation                   [PENDING]
 
@@ -28,7 +28,7 @@ Outputs written to results/final-improvements/:
     p0_2_threshold_sensitivity.txt
     p0_3_additive_regression.txt           [IMPLEMENTED]
     p0_4_window_sensitivity.csv            [PENDING]
-    p0_5_expanded_exclusion.txt            [PENDING]
+    p0_5_expanded_exclusion.txt            [IMPLEMENTED]
     p0_6_preannouncement_stats.txt         [PENDING]
     p0_7_simulation_full.txt               [PENDING]
     p0_7_simulation_stable.txt             [PENDING]
@@ -98,6 +98,35 @@ ANNOUNCEMENT_DATES = [
     pd.Timestamp('2025-09-05 08:30', tz=TZ),
     pd.Timestamp('2025-11-20 08:30', tz=TZ),
     pd.Timestamp('2025-12-16 08:30', tz=TZ),
+]
+
+# Expanded announcement set for P0-5 (Andersen et al., 2007).
+# Adds PPI, retail sales, and advance GDP to the original FOMC/CPI/NFP list.
+#
+# Omitted as redundant (already in ANNOUNCEMENT_DATES):
+#   2025-09-10 08:30  — August PPI released same day as September CPI
+#   2025-12-16 08:30  — October retail sales released same day as December NFP
+#
+# Government shutdown effects:
+#   September 2025 PPI and retail sales: delayed to 2025-11-25 (from Oct 16)
+#   October 2025 PPI: no separate release (combined with November, Jan 14 2026)
+#   October 2025 retail sales: delayed to 2025-12-16 (already in NFP date)
+#   Q3 2025 GDP advance estimate: canceled; initial estimate released 2025-12-23
+EXPANDED_ANNOUNCEMENT_DATES = ANNOUNCEMENT_DATES + [
+    # PPI releases (8:30 AM ET) — BLS historical release dates PDF
+    pd.Timestamp('2025-05-15 08:30', tz=TZ),   # April data (also Retail Sales April)
+    pd.Timestamp('2025-06-12 08:30', tz=TZ),   # May data
+    pd.Timestamp('2025-07-16 08:30', tz=TZ),   # June data
+    pd.Timestamp('2025-08-14 08:30', tz=TZ),   # July data
+    pd.Timestamp('2025-11-25 08:30', tz=TZ),   # Sept data (delayed from Oct 16)
+    # Retail Sales releases (8:30 AM ET) — Census Bureau release schedule
+    pd.Timestamp('2025-06-17 08:30', tz=TZ),   # May data
+    pd.Timestamp('2025-07-17 08:30', tz=TZ),   # June data
+    pd.Timestamp('2025-08-15 08:30', tz=TZ),   # July data
+    pd.Timestamp('2025-09-16 08:30', tz=TZ),   # August data
+    # Advance GDP releases (8:30 AM ET) — BEA release documents
+    pd.Timestamp('2025-07-30 08:30', tz=TZ),   # Q2 2025 Advance Estimate
+    pd.Timestamp('2025-12-23 08:30', tz=TZ),   # Q3 2025 Initial Estimate
 ]
 
 # Columns required to drop NaN rows once, covering warmup, day boundaries,
@@ -652,21 +681,75 @@ pd.DataFrame(p04_rows).to_csv(_p04_path, index=False, float_format='%.8f')
 print(f"\n  Saved: p0_4_window_sensitivity.csv  ({len(p04_rows)} rows)")
 
 # =============================================================================
-# P0-5 — EXPANDED ANNOUNCEMENT EXCLUSION SET                     [PENDING]
+# P0-5 — EXPANDED ANNOUNCEMENT EXCLUSION SET                  [IMPLEMENTED]
 # =============================================================================
 # Expand the announcement exclusion set to six high-impact releases
 # (FOMC, CPI, NFP, PPI, advance GDP, retail sales) per Andersen et al.
-# (2007). Re-run primary regression with expanded +30-min post-
-# announcement exclusion. Report change in N, β₃, and p-value.
+# (2007). Re-run primary regression with the expanded set and the corrected
+# pre-market exclusion window (premarket_rth_shift=True): pre-market releases
+# at 08:30 now exclude the first 30 minutes of RTH (09:30–10:00) on the
+# announcement day, rather than the pre-RTH interval 08:30–09:00 which
+# contains no RTH bars. FOMC windows at 14:00 are unchanged.
 #
 # Required outputs:
 #   p0_5_expanded_exclusion.txt
 #   p0_key_results.csv  (rows appended)
 
 print("\n" + "=" * 60)
-print("P0-5 — EXPANDED ANNOUNCEMENT EXCLUSION SET                [PENDING]")
+print("P0-5 — EXPANDED ANNOUNCEMENT EXCLUSION SET")
 print("=" * 60)
-print("  Not yet implemented — skipped.")
+
+# --- Strip timezone if index is tz-naive (mirrors ann_dates handling above) ---
+_exp_ann_dates = EXPANDED_ANNOUNCEMENT_DATES
+if bars.index.tzinfo is None:
+    _exp_ann_dates = [dt.tz_localize(None) for dt in _exp_ann_dates]
+
+# --- Recompute exclusion mask and regime score with expanded set --------------
+# Local variables only — do NOT overwrite the global exclusion_mask /
+# regime_score used by other P0 sections and the shared reg DataFrame.
+print(f"  Original announcement dates:  {len(ann_dates):>3}")
+print(f"  Expanded announcement dates:  {len(_exp_ann_dates):>3}  "
+      f"(+{len(_exp_ann_dates) - len(ann_dates)} new: PPI ×5, "
+      f"Retail Sales ×4, Advance GDP ×2)")
+
+exclusion_mask_p05 = compute_exclusion_mask(
+    bars, _exp_ann_dates, premarket_rth_shift=True
+)
+regime_score_p05 = compute_regime_score(
+    lambda_series, arrival_series, exclusion_mask_p05
+)
+
+n_excluded_orig = int(exclusion_mask_p05.sum())
+print(f"\n  Bars excluded (expanded mask): {n_excluded_orig:,}")
+
+# --- Rebuild regression DataFrame with new regime score ----------------------
+reg_p05 = _build_reg_df(tfi, returns, regime_score_p05)
+n_raw_p05   = len(reg_p05)
+reg_p05     = reg_p05.dropna(subset=REGRESSION_COLS)
+n_final_p05 = len(reg_p05)
+
+n_original = int(model_p01_with.nobs)   # from P0-1 sanity check
+print(f"\n  N original (primary spec):    {n_original:,}")
+print(f"  N expanded:                   {n_final_p05:,}")
+print(f"  ΔN (bars removed):            {n_original - n_final_p05:,}")
+
+# --- Primary regression on expanded exclusion sample -------------------------
+model_p05 = _fit_ols(reg_p05['fwd_return'], PRIMARY_COLS, reg_p05)
+
+print(f"\n  β₃ (tfi_x_regime) — original: "
+      f"{model_p01_with.params['tfi_x_regime']:.6f}  "
+      f"p = {model_p01_with.pvalues['tfi_x_regime']:.3f}")
+print(f"  β₃ (tfi_x_regime) — expanded: "
+      f"{model_p05.params['tfi_x_regime']:.6f}  "
+      f"p = {model_p05.pvalues['tfi_x_regime']:.3f}")
+
+print(f"\n  Full coefficient table (expanded exclusion):")
+_print_coeff_table(model_p05,
+                   ['const', 'tfi', 'regime_score',
+                    'tfi_x_regime', 'lag_return', 'lag_tfi'])
+
+_save_model(model_p05, 'p0_5_expanded_exclusion.txt')
+_collect_rows(model_p05, 'p0_5_expanded_exclusion', key_results_rows)
 
 # =============================================================================
 # P0-6 — PRE-ANNOUNCEMENT WINDOW CHARACTERIZATION                [PENDING]
