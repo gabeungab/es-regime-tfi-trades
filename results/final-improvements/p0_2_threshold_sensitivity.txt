@@ -16,7 +16,7 @@ Dep. Variable:             lag_return   R-squared:                       0.009
 Model:                            OLS   Adj. R-squared:                  0.009
 Method:                 Least Squares   F-statistic:                     212.5
 Date:                Tue, 16 Jun 2026   Prob (F-statistic):          2.90e-181
-Time:                        11:23:32   Log-Likelihood:             2.7467e+05
+Time:                        19:15:01   Log-Likelihood:             2.7467e+05
 No. Observations:               55634   AIC:                        -5.493e+05
 Df Residuals:                   55629   BIC:                        -5.493e+05
 Df Model:                           4                                         
@@ -48,7 +48,7 @@ Dep. Variable:             lag_return   R-squared:                       0.009
 Model:                            OLS   Adj. R-squared:                  0.009
 Method:                 Least Squares   F-statistic:                     190.9
 Date:                Tue, 16 Jun 2026   Prob (F-statistic):          8.22e-163
-Time:                        11:23:32   Log-Likelihood:             2.7468e+05
+Time:                        19:15:01   Log-Likelihood:             2.7468e+05
 No. Observations:               55634   AIC:                        -5.493e+05
 Df Residuals:                   55629   BIC:                        -5.493e+05
 Df Model:                           4                                         
@@ -80,7 +80,7 @@ Dep. Variable:             lag_return   R-squared:                       0.009
 Model:                            OLS   Adj. R-squared:                  0.009
 Method:                 Least Squares   F-statistic:                     171.5
 Date:                Tue, 16 Jun 2026   Prob (F-statistic):          2.84e-146
-Time:                        11:23:32   Log-Likelihood:             2.7467e+05
+Time:                        19:15:01   Log-Likelihood:             2.7467e+05
 No. Observations:               55634   AIC:                        -5.493e+05
 Df Residuals:                   55629   BIC:                        -5.493e+05
 Df Model:                           4                                         

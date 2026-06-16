@@ -17,7 +17,7 @@ Phase 0 code items:
     P0-3  Additive Combination Robustness          [IMPLEMENTED]
     P0-4  Lambda and TAR Window Sensitivity        [PENDING]
     P0-5  Expanded Announcement Exclusion Set      [IMPLEMENTED]
-    P0-6  Pre-Announcement Window Characterization [PENDING]
+    P0-6  Pre-Announcement Window Characterization [IMPLEMENTED]
     P0-7  Formal Bias Simulation                   [PENDING]
 
 Writing revisions P0-8, P0-9, P0-10 are applied directly to PAPER.md
@@ -762,9 +762,136 @@ _collect_rows(model_p05, 'p0_5_expanded_exclusion', key_results_rows)
 #   p0_6_preannouncement_stats.txt
 
 print("\n" + "=" * 60)
-print("P0-6 — PRE-ANNOUNCEMENT WINDOW CHARACTERIZATION           [PENDING]")
+print("P0-6 — PRE-ANNOUNCEMENT WINDOW CHARACTERIZATION")
 print("=" * 60)
-print("  Not yet implemented — skipped.")
+
+# Extract the 6 FOMC dates from ANNOUNCEMENT_DATES (hour=14, minute=0).
+# This avoids re-hardcoding and guarantees consistency with the rest of
+# the script.
+_P06_FOMC_DATES = [dt for dt in ANNOUNCEMENT_DATES
+                   if dt.hour == 14 and dt.minute == 0]
+assert len(_P06_FOMC_DATES) == 6, (
+    f"Expected 6 FOMC dates, got {len(_P06_FOMC_DATES)}. "
+    f"Check ANNOUNCEMENT_DATES."
+)
+print(f"\n  FOMC events identified: {len(_P06_FOMC_DATES)}")
+for _dt in _P06_FOMC_DATES:
+    print(f"    {_dt}")
+
+# Timezone handling — mirror the pattern used throughout this script.
+# If reg.index is tz-naive, strip tz from the FOMC timestamps so that
+# comparisons don't raise.
+_fomc_dates_p06 = _P06_FOMC_DATES
+if reg.index.tzinfo is None:
+    _fomc_dates_p06 = [dt.tz_localize(None) for dt in _fomc_dates_p06]
+
+# Pre-announcement window: bars where
+#   fomc_dt - 30 min  <=  bar_time  <=  fomc_dt - 1 min
+# With 1-minute bars labeled by start-of-minute, this captures
+# 13:30, 13:31, ..., 13:59 — 30 bars per FOMC event.
+_pre_ann_mask_p06 = pd.Series(False, index=reg.index)
+for _fomc_dt in _fomc_dates_p06:
+    _ws = _fomc_dt - pd.Timedelta(minutes=30)
+    _we = _fomc_dt - pd.Timedelta(minutes=1)
+    _pre_ann_mask_p06 |= (reg.index >= _ws) & (reg.index <= _we)
+
+reg_p06_pre = reg[_pre_ann_mask_p06]
+n_pre_p06   = len(reg_p06_pre)
+
+# Full-sample means from the main regression DataFrame (N = 55,634).
+# Consistent with how all other results in the paper are stated.
+_full_mean_rs_p06  = reg['regime_score'].mean()
+_full_mean_tfi_p06 = reg['tfi'].abs().mean()
+
+# Pre-announcement aggregate means.
+_pre_mean_rs_p06  = reg_p06_pre['regime_score'].mean()
+_pre_mean_tfi_p06 = reg_p06_pre['tfi'].abs().mean()
+
+# Per-event breakdown — primarily for verification and the output file.
+print(f"\n  Pre-announcement windows (13:30–13:59 ET, ≤30 bars/event):")
+print(f"  {'Event date':>12} {'N bars':>7} {'Mean RegimeScore':>17} {'Mean |TFI|':>12}")
+print(f"  {'-' * 52}")
+
+_p06_event_rows = []
+for _fomc_dt in _fomc_dates_p06:
+    _ws = _fomc_dt - pd.Timedelta(minutes=30)
+    _we = _fomc_dt - pd.Timedelta(minutes=1)
+    _ev = reg[(reg.index >= _ws) & (reg.index <= _we)]
+    _ev_rs  = _ev['regime_score'].mean() if len(_ev) > 0 else float('nan')
+    _ev_tfi = _ev['tfi'].abs().mean()    if len(_ev) > 0 else float('nan')
+    _date_str = str(_fomc_dt.date()) if hasattr(_fomc_dt, 'date') else str(_fomc_dt)[:10]
+    print(f"  {_date_str:>12} {len(_ev):>7} {_ev_rs:>17.6f} {_ev_tfi:>12.6f}")
+    _p06_event_rows.append({
+        'fomc_date':       _date_str,
+        'n_bars':          len(_ev),
+        'mean_regime_score': _ev_rs,
+        'mean_abs_tfi':    _ev_tfi,
+    })
+
+print(f"  {'-' * 52}")
+print(f"  {'Aggregate':>12} {n_pre_p06:>7} {_pre_mean_rs_p06:>17.6f} "
+      f"{_pre_mean_tfi_p06:>12.6f}")
+print(f"\n  Full-sample comparison (N = {len(reg):,}):")
+print(f"    Mean RegimeScore: {_full_mean_rs_p06:.6f}")
+print(f"    Mean |TFI|:       {_full_mean_tfi_p06:.6f}")
+print(f"\n  Ratios (pre-announcement / full-sample):")
+print(f"    RegimeScore: {_pre_mean_rs_p06 / _full_mean_rs_p06:.3f}x")
+print(f"    |TFI|:       {_pre_mean_tfi_p06 / _full_mean_tfi_p06:.3f}x")
+
+# Sanity check — each event should have close to 30 bars.
+_n_per_event = [r['n_bars'] for r in _p06_event_rows]
+if any(n < 20 for n in _n_per_event):
+    print(f"\n  WARNING: one or more FOMC events has fewer than 20 bars in "
+          f"the pre-announcement window. Check that the event dates and "
+          f"the reg index timezone align correctly.")
+else:
+    print(f"\n  Sanity check: all events have ≥20 bars in window ✓")
+
+# --- Save output file --------------------------------------------------------
+_p06_path = os.path.join(RESULTS_DIR, 'p0_6_preannouncement_stats.txt')
+with open(_p06_path, 'w') as _f:
+    _f.write("P0-6 PRE-ANNOUNCEMENT WINDOW CHARACTERIZATION\n")
+    _f.write("=" * 60 + "\n\n")
+    _f.write("FOMC events in-sample: 6\n")
+    _f.write("Pre-announcement window: 30 min before announcement "
+             "(13:30–13:59 ET)\n")
+    _f.write("Source series: main regression sample "
+             f"(N = {len(reg):,} after dropna)\n")
+    _f.write("Statistics: descriptive only — no inference.\n\n")
+
+    _f.write(f"{'Event date':>12} {'N bars':>7} "
+             f"{'Mean RegimeScore':>17} {'Mean |TFI|':>12}\n")
+    _f.write("-" * 52 + "\n")
+    for _row in _p06_event_rows:
+        _f.write(f"{_row['fomc_date']:>12} {_row['n_bars']:>7} "
+                 f"{_row['mean_regime_score']:>17.6f} "
+                 f"{_row['mean_abs_tfi']:>12.6f}\n")
+    _f.write("-" * 52 + "\n")
+    _f.write(f"{'Aggregate':>12} {n_pre_p06:>7} "
+             f"{_pre_mean_rs_p06:>17.6f} {_pre_mean_tfi_p06:>12.6f}\n\n")
+
+    _f.write(f"Full-sample means (N = {len(reg):,}):\n")
+    _f.write(f"  Mean RegimeScore: {_full_mean_rs_p06:.6f}\n")
+    _f.write(f"  Mean |TFI|:       {_full_mean_tfi_p06:.6f}\n\n")
+
+    _f.write(f"Ratios (pre-announcement / full-sample):\n")
+    _f.write(f"  RegimeScore: {_pre_mean_rs_p06 / _full_mean_rs_p06:.3f}x\n")
+    _f.write(f"  |TFI|:       {_pre_mean_tfi_p06 / _full_mean_tfi_p06:.3f}x\n")
+
+print(f"  Saved: p0_6_preannouncement_stats.txt")
+
+# --- PAPER.md edit guidance --------------------------------------------------
+print(f"\n  --- PAPER.md edit guidance (Section 4.3 footnote) ---")
+print(f"  Add immediately after the sentence ending '...excluding these bars")
+print(f"  would discard potentially genuine informed trading episodes.':")
+print()
+print(f"    Descriptively, the {len(_P06_FOMC_DATES)} FOMC pre-announcement")
+print(f"    windows in the in-sample period (13:30–13:59 ET, {n_pre_p06} bars")
+print(f"    total) have mean RegimeScore {_pre_mean_rs_p06:.3f} and mean")
+print(f"    |TFI| {_pre_mean_tfi_p06:.4f}, compared to full-sample means of")
+print(f"    {_full_mean_rs_p06:.3f} and {_full_mean_tfi_p06:.4f} respectively.")
+print(f"    With only {len(_P06_FOMC_DATES)} events, this comparison is")
+print(f"    descriptive only and carries no inferential weight.")
 
 # =============================================================================
 # P0-7 — FORMAL BIAS SIMULATION                                  [PENDING]

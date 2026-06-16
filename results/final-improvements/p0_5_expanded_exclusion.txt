@@ -4,7 +4,7 @@ Dep. Variable:             fwd_return   R-squared:                       0.236
 Model:                            OLS   Adj. R-squared:                  0.236
 Method:                 Least Squares   F-statistic:                     587.2
 Date:                Tue, 16 Jun 2026   Prob (F-statistic):               0.00
-Time:                        11:25:10   Log-Likelihood:             2.8491e+05
+Time:                        19:16:38   Log-Likelihood:             2.8491e+05
 No. Observations:               56214   AIC:                        -5.698e+05
 Df Residuals:                   56208   BIC:                        -5.698e+05
 Df Model:                           5                                         

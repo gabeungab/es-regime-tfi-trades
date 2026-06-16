@@ -1,0 +1,26 @@
+P0-6 PRE-ANNOUNCEMENT WINDOW CHARACTERIZATION
+============================================================
+
+FOMC events in-sample: 6
+Pre-announcement window: 30 min before announcement (13:30–13:59 ET)
+Source series: main regression sample (N = 55,634 after dropna)
+Statistics: descriptive only — no inference.
+
+  Event date  N bars  Mean RegimeScore   Mean |TFI|
+----------------------------------------------------
+  2025-05-07      30          0.371854     0.061972
+  2025-06-18      30          0.000000     0.106204
+  2025-07-30      30          0.198523     0.120593
+  2025-09-17      30          0.000000     0.092244
+  2025-10-29      30          0.280448     0.112085
+  2025-12-10      30          0.248393     0.086786
+----------------------------------------------------
+   Aggregate     180          0.183203     0.096647
+
+Full-sample means (N = 55,634):
+  Mean RegimeScore: 0.214950
+  Mean |TFI|:       0.089871
+
+Ratios (pre-announcement / full-sample):
+  RegimeScore: 0.852x
+  |TFI|:       1.075x
