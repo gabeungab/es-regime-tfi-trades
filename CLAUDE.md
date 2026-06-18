@@ -51,7 +51,7 @@ applications at top firms.
 
 ## Current status
 
-**ALL PHASES COMPLETE. PHASE 0 IMPROVEMENTS IN PROGRESS.**
+**ALL PHASES COMPLETE. PHASE 0 IMPROVEMENTS COMPLETE.**
 
 Final paper: `paper/es_regime_tfi_trades.pdf` (27 pages).
 Repository: es-futures-microstructure on GitHub.
@@ -64,7 +64,10 @@ Phase 0 quality improvements (project2_plan.md):
 - P0-4 Lambda and TAR Window Sensitivity — COMPLETE
 - P0-5 Expanded Announcement Exclusion Set — COMPLETE
 - P0-6 Pre-Announcement Window Characterization — COMPLETE
-- P0-7 Formal Bias Simulation — PENDING
+- P0-7 Formal Bias Simulation — COMPLETE
+- P0-8 Market Maker Implications Reframing — COMPLETE
+- P0-9 Net-Return Magnitude Framing — COMPLETE
+- P0-10 Efficiency Interpretation Logic Chain — COMPLETE
 
 Next project: Paper 2 — MBO-based orthogonal regime detector study.
 MBO data purchased: 2025-01-05 to 2025-12-28 (GLBX.MDP3, ~60GB).

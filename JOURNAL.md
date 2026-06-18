@@ -1792,7 +1792,50 @@ P0-7 — Formal Bias Simulation.
 
 ---
 
-## 2026-06-17
+## 2026-06-18
+
+**Session Summary:**
+- P0-7 (Formal Bias Simulation): implemented permutation loop in
+  `final_improvements.py` (1,000 permutations, seed=42, plain OLS);
+  ran on full sample and stable-conditions subsample; updated
+  PAPER.md Section 4.5 and Abstract with simulation results replacing
+  "plausibility argument / deferred to future work" language
+- P0-8 (Market Maker Implications Reframing): rewrote stable-conditions
+  paragraph in Section 7 to lead with all three caveats (post-hoc
+  threshold, no OOS replication, circular stability metric) before any
+  directional framing; removed redundant qualifications paragraph
+- P0-9 (Net-Return Magnitude Framing): relabeled 0.22 bps full-sample
+  calculation as an upper bound on noise-level magnitude, not a signal
+  estimate; separated "neither figure survives" into two sentences
+  distinguishing the null upper bound from the caveated in-sample estimate
+- P0-10 (Efficiency Interpretation Logic Chain): added conditional
+  three-step logic chain to both Abstract and Section 5.1 — 2.278×
+  within-bar amplification as basis, "if genuine and not purely
+  circularity-driven" conditionality, Phase 3 LOB-based detector as resolver
+
+**Findings:**
+- P0-7 full sample: null distribution mean = +0.000011, confirming
+  upward bias direction; bias is small (~3% of observed β̂₃ = 0.000371);
+  observed at 85.4th percentile (sim p = 0.146) — null holds comfortably
+- P0-7 stable subsample: null distribution mean = 0.000000; observed
+  β̂₃ = 0.001016 at 98.5th percentile (sim p = 0.015) — the
+  stable-conditions in-sample result is NOT a mechanical circularity
+  artifact; its OOS non-replication is a sample-specificity problem, not
+  a measurement bias issue
+- Sim p-values (0.146 full, 0.015 stable) are lower than HAC p-values
+  (0.234, 0.033) as expected — plain OLS is anti-conservative under
+  serial correlation; both tell the same story
+
+**Open questions:**
+None
+
+**Next step:**
+- Proof-read PAPER.md
+- Update final paper pdf
+
+---
+
+## 2026-06-19
 
 **Session Summary:**
 - 
