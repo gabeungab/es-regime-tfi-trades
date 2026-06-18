@@ -13,8 +13,13 @@ trades across 169 trading days on CME Globex and validated on a
 held-out 46-day out-of-sample period. The primary finding is a null
 result: regime-conditioned TFI does not significantly predict forward
 returns at any horizon from T+1 through T+15 (β₃ = 0.000371,
-p = 0.234), implying that ES futures incorporate regime-conditioned
-order flow information within one 1-minute bar. A key secondary
+p = 0.234). The detector validation separately establishes 2.278×
+within-bar price impact amplification in high-regime bars (p < 0.001).
+If this amplification is genuine rather than circularity-driven, the
+null forward-return result reflects within-bar information
+incorporation rather than an absence of signal; a follow-on study
+with an orthogonal LOB-based detector will determine which
+interpretation is warranted. A key secondary
 finding qualifies this conclusion: restricting the regression to
 bars where the lambda estimation window is most stable produces a
 statistically significant regime-TFI interaction (β₃ = 0.001016,
@@ -688,9 +693,16 @@ in the sense defined in Section 4.5.
 
 R² = 0.236, N = 55,634. HAC standard errors (Newey-West, maxlags=5).
 
-β₃ = 0.000371, p = 0.234. H₀ is not rejected. ES futures prices
-incorporate regime-conditioned order flow information within one
-1-minute bar. The unconditional TFI effect (β₁ = 0.000637,
+β₃ = 0.000371, p = 0.234. H₀ is not rejected. The contemporaneous
+validation (Section 4.4) establishes that the regime detector
+identifies elevated within-bar price impact (2.278× amplification,
+p < 0.001). This within-bar amplification, if genuine and not purely
+circularity-driven, implies that regime-conditioned order flow
+information acts on prices within the bar rather than across bars,
+making the null forward-return result a consequence of within-bar
+information incorporation rather than an absence of signal. The
+extension's orthogonal LOB-based detector test will determine whether
+this interpretation is warranted. The unconditional TFI effect (β₁ = 0.000637,
 p < 0.001) replicates the Cont, Kukanov, and Stoikov (2014) finding
 that order flow imbalance predicts short-term returns; this effect
 does not survive round-trip transaction costs of approximately 0.774
@@ -1243,30 +1255,36 @@ current data. The stable-conditions gradient motivates a specific
 future investigation, but the three caveats documented above
 preclude any current directional application.
 
-**Net-return magnitude.** A back-of-envelope calculation bounds the
-economic significance of the regime-conditioned signal in the
-high-regime/high-|TFI| cell. In high-regime bars (RegimeScore >
-0.5, N = 6,719 in-sample), mean |TFI| is approximately 0.08
-(approximate, computed from the in-sample distribution). Using the
-full-sample interaction coefficient β₃ = 0.000371, the
-regime-conditioned contribution to expected next-bar log return at
-mean |TFI| = 0.08 and a representative RegimeScore of 0.75 is
-approximately 0.000371 × 0.08 × 0.75 ≈ 0.000022, or 0.22 bps.
-Using the stable-condition coefficient β₃ = 0.001016, the same
-calculation yields 0.000061, or 0.61 bps. Round-trip transaction
-costs are approximately 0.774 bps. Neither figure survives
-round-trip costs, confirming that the regime-conditioned signal
-carries no directional trading application under either
-specification. The stable-condition estimate is approximately 79%
-of round-trip costs before accounting for adverse selection risk
-at the point of execution — where, by construction, the market
-maker is transacting against informed flow. High-regime bars
-represent 12.1% of the regression sample (6,719 of 55,634 bars),
-yielding approximately 40 high-regime bars per trading day; this
-frequency is sufficient to amortize fixed costs but does not
-alter the gross-vs-net shortfall. No quantitative calibration
-of adverse selection amplification can be derived from these
-figures for the reasons stated above.
+**Net-return magnitude.** A back-of-envelope calculation
+characterizes the noise-level magnitude of the regime-conditioned
+signal in the high-regime/high-|TFI| cell. In high-regime bars
+(RegimeScore > 0.5, N = 6,719 in-sample), mean |TFI| is
+approximately 0.08 (computed from the in-sample distribution).
+The full-sample coefficient β₃ = 0.000371 is a null result
+(p = 0.234); the corresponding calculation at mean |TFI| = 0.08
+and a representative RegimeScore of 0.75 yields
+0.000371 × 0.08 × 0.75 ≈ 0.000022, or 0.22 bps. This figure is
+not a signal magnitude estimate. It is an upper bound on the
+noise-level magnitude consistent with the null result,
+establishing that even the maximum plausible regime-conditioned
+effect is economically negligible. Using the stable-condition
+coefficient β₃ = 0.001016, the same calculation yields 0.000061,
+or 0.61 bps; this is an in-sample estimate subject to the three
+caveats stated above and should not be interpreted as a plausible
+signal estimate outside the in-sample context. Round-trip
+transaction costs are approximately 0.774 bps. The null upper
+bound (0.22 bps) falls below transaction costs, confirming the
+primary result is economically negligible. The stable-condition
+in-sample estimate (0.61 bps) is approximately 79% of round-trip
+costs before accounting for adverse selection risk at the point
+of execution, where the market maker is transacting against
+informed flow. High-regime bars represent 12.1% of the regression
+sample (6,719 of 55,634 bars), yielding approximately 40
+high-regime bars per trading day; this frequency is sufficient to
+amortize fixed costs but does not alter the gross-vs-net
+shortfall. No quantitative calibration of adverse selection
+amplification can be derived from these figures for the reasons
+stated above.
 
 ---
 
