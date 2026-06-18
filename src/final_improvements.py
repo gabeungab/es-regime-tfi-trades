@@ -15,10 +15,10 @@ Phase 0 code items:
     P0-1  R² Decomposition                         [IMPLEMENTED]
     P0-2  Threshold Sensitivity                    [IMPLEMENTED]
     P0-3  Additive Combination Robustness          [IMPLEMENTED]
-    P0-4  Lambda and TAR Window Sensitivity        [PENDING]
+    P0-4  Lambda and TAR Window Sensitivity        [IMPLEMENTED]
     P0-5  Expanded Announcement Exclusion Set      [IMPLEMENTED]
     P0-6  Pre-Announcement Window Characterization [IMPLEMENTED]
-    P0-7  Formal Bias Simulation                   [PENDING]
+    P0-7  Formal Bias Simulation                   [IMPLEMENTED]
 
 Writing revisions P0-8, P0-9, P0-10 are applied directly to PAPER.md
 and are not implemented here.
@@ -27,18 +27,21 @@ Outputs written to results/final-improvements/:
     p0_1_primary_no_lag_return.txt
     p0_2_threshold_sensitivity.txt
     p0_3_additive_regression.txt           [IMPLEMENTED]
-    p0_4_window_sensitivity.csv            [PENDING]
+    p0_4_window_sensitivity.csv            [IMPLEMENTED]
     p0_5_expanded_exclusion.txt            [IMPLEMENTED]
-    p0_6_preannouncement_stats.txt         [PENDING]
-    p0_7_simulation_full.txt               [PENDING]
-    p0_7_simulation_stable.txt             [PENDING]
-    p0_7_simulation_histogram.png          [PENDING]
+    p0_6_preannouncement_stats.txt         [IMPLEMENTED]
+    p0_7_simulation_full.txt               [IMPLEMENTED]
+    p0_7_simulation_stable.txt             [IMPLEMENTED]
+    p0_7_simulation_histogram.png          [IMPLEMENTED]
     p0_key_results.csv
 """
 
 import os
 import sys
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
@@ -894,13 +897,13 @@ print(f"    With only {len(_P06_FOMC_DATES)} events, this comparison is")
 print(f"    descriptive only and carries no inferential weight.")
 
 # =============================================================================
-# P0-7 — FORMAL BIAS SIMULATION                                  [PENDING]
+# P0-7 — FORMAL BIAS SIMULATION
 # =============================================================================
 # Permutation simulation confirming upward bias direction. Generate 1,000
 # synthetic datasets under H₀ by permuting forward returns while preserving
 # the joint distribution of TFI and RegimeScore. Apply the full primary
 # regression pipeline to each permuted dataset. Run on both the full
-# in-sample dataset and the stable-conditions subsample (N = 18,355).
+# in-sample dataset and the stable-conditions subsample (N ≈ 18,355).
 #
 # Required outputs:
 #   p0_7_simulation_full.txt
@@ -908,9 +911,252 @@ print(f"    descriptive only and carries no inferential weight.")
 #   p0_7_simulation_histogram.png
 
 print("\n" + "=" * 60)
-print("P0-7 — FORMAL BIAS SIMULATION                             [PENDING]")
+print("P0-7 — FORMAL BIAS SIMULATION")
 print("=" * 60)
-print("  Not yet implemented — skipped.")
+
+# --- Constants ----------------------------------------------------------------
+_P07_N_PERMS     = 1_000
+_P07_SEED        = 42
+_P07_OBS_B3_FULL = 0.000371   # sanity-check reference (primary regression)
+_P07_OBS_B3_STAB = 0.001016   # sanity-check reference (stable-conditions)
+
+# --- Build stable-conditions subsample ----------------------------------------
+# Reuses _signed_flow_p04 (computed in P0-4, signed-flow series at bar level).
+# Rolling std window = 30 bars, min_periods = 15 — identical to the
+# stable-conditions construction in formal_analysis.py Section 5.
+# Bottom tercile of rolling std = most stable lambda estimation conditions.
+_sf_p07  = _signed_flow_p04.reindex(reg.index)
+_lws_p07 = _sf_p07.rolling(30, min_periods=15).std()
+
+_reg_p07         = reg.copy()
+_reg_p07['_lws'] = _lws_p07
+_p33_p07         = _reg_p07['_lws'].quantile(0.33)
+
+reg_stable_p07 = _reg_p07[_reg_p07['_lws'] <= _p33_p07].dropna(
+    subset=REGRESSION_COLS
+)
+
+print(f"\n  Stable-conditions subsample (bottom tercile lambda-window std):")
+print(f"    Stability threshold:  {_p33_p07:.2f} contracts signed-flow std")
+print(f"    N stable bars:        {len(reg_stable_p07):,}")
+
+_P07_N_STABLE_EXPECTED = 18355
+if abs(len(reg_stable_p07) - _P07_N_STABLE_EXPECTED) > 200:
+    print(f"  WARNING: N = {len(reg_stable_p07):,} differs from expected "
+          f"≈ {_P07_N_STABLE_EXPECTED:,}. Verify stable-conditions construction "
+          f"matches formal_analysis.py Section 5.")
+else:
+    print(f"    Sanity check: N ≈ {_P07_N_STABLE_EXPECTED:,} expected ✓")
+
+# --- Fit observed regressions (HAC) -------------------------------------------
+model_p07_full   = _fit_ols(reg['fwd_return'], PRIMARY_COLS, reg)
+model_p07_stable = _fit_ols(
+    reg_stable_p07['fwd_return'], PRIMARY_COLS, reg_stable_p07
+)
+
+obs_b3_full   = model_p07_full.params['tfi_x_regime']
+obs_b3_stable = model_p07_stable.params['tfi_x_regime']
+obs_pv_full   = model_p07_full.pvalues['tfi_x_regime']
+obs_pv_stable = model_p07_stable.pvalues['tfi_x_regime']
+
+print(f"\n  Observed β̂₃ — full sample:        {obs_b3_full:.6f}  "
+      f"(HAC p = {obs_pv_full:.4f})")
+print(f"  Observed β̂₃ — stable subsample:   {obs_b3_stable:.6f}  "
+      f"(HAC p = {obs_pv_stable:.4f})")
+
+for _label, _got, _exp in [('full',   obs_b3_full,   _P07_OBS_B3_FULL),
+                             ('stable', obs_b3_stable, _P07_OBS_B3_STAB)]:
+    if abs(_got - _exp) < 0.0001:
+        print(f"  Sanity check ({_label}): β̂₃ = {_got:.6f} ≈ {_exp} ✓")
+    else:
+        print(f"  WARNING ({_label}): β̂₃ = {_got:.6f}, expected ≈ {_exp}. "
+              f"Verify pipeline.")
+
+# --- Build numpy design matrices ----------------------------------------------
+# sm.add_constant column order: [const, tfi, regime_score, tfi_x_regime,
+# lag_return, lag_tfi]  →  b[3] = tfi_x_regime coefficient.
+# This is consistent with Diagnostic 7 in formal_analysis.py (OOS permutation).
+X_full_p07   = sm.add_constant(reg[PRIMARY_COLS]).values
+y_full_p07   = reg['fwd_return'].values.copy()
+
+X_stable_p07 = sm.add_constant(reg_stable_p07[PRIMARY_COLS]).values
+y_stable_p07 = reg_stable_p07['fwd_return'].values.copy()
+
+# --- Permutation loops --------------------------------------------------------
+# Plain OLS (np.linalg.lstsq), not HAC. Permuting Y destroys the serial
+# correlation structure of the dependent variable, making HAC correction
+# unnecessary and computationally wasteful inside the permutation loop.
+# Pattern mirrors Diagnostic 7 in formal_analysis.py.
+print(f"\n  Running {_P07_N_PERMS:,} permutations (seed={_P07_SEED}) ...")
+
+np.random.seed(_P07_SEED)
+
+_perm_b3_full = []
+for _i in range(_P07_N_PERMS):
+    _y_perm = np.random.permutation(y_full_p07)
+    try:
+        _b = np.linalg.lstsq(X_full_p07, _y_perm, rcond=None)[0]
+        _perm_b3_full.append(_b[3])
+    except Exception:
+        continue
+    if (_i + 1) % 250 == 0:
+        print(f"    Full sample:      {_i + 1:,}/{_P07_N_PERMS:,} ...")
+
+_perm_b3_stable = []
+for _i in range(_P07_N_PERMS):
+    _y_perm = np.random.permutation(y_stable_p07)
+    try:
+        _b = np.linalg.lstsq(X_stable_p07, _y_perm, rcond=None)[0]
+        _perm_b3_stable.append(_b[3])
+    except Exception:
+        continue
+    if (_i + 1) % 250 == 0:
+        print(f"    Stable subsample: {_i + 1:,}/{_P07_N_PERMS:,} ...")
+
+perm_b3_full   = np.array(_perm_b3_full)
+perm_b3_stable = np.array(_perm_b3_stable)
+print(f"  Permutation loops complete ({len(perm_b3_full)} full, "
+      f"{len(perm_b3_stable)} stable iterations).")
+
+# --- Compute and report statistics --------------------------------------------
+
+def _p07_report(obs_b3, perm_arr, label, n_obs):
+    """Print permutation stats to stdout. Returns dict for file output."""
+    null_mean        = perm_arr.mean()
+    null_median      = float(np.median(perm_arr))
+    null_std         = perm_arr.std()
+    null_min         = perm_arr.min()
+    null_max         = perm_arr.max()
+    obs_pctile       = float((perm_arr <= obs_b3).mean()) * 100
+    sim_pval         = float((perm_arr >= obs_b3).mean())
+    obs_above_median = obs_b3 > null_median
+
+    print(f"\n  {'─' * 54}")
+    print(f"  {label}  (N = {n_obs:,})")
+    print(f"  {'─' * 54}")
+    print(f"  Observed β̂₃:            {obs_b3:.6f}")
+    print(f"  Null mean:              {null_mean:.6f}")
+    print(f"  Null median:            {null_median:.6f}")
+    print(f"  Null std:               {null_std:.6f}")
+    print(f"  Null [min, max]:        [{null_min:.6f},  {null_max:.6f}]")
+    print(f"  Observed percentile:    {obs_pctile:.1f}th")
+    print(f"  Simulation p-value:     {sim_pval:.4f}")
+    _dir = "CONFIRMED" if obs_above_median else "NOT CONFIRMED"
+    print(f"  Upward bias direction:  {_dir}  "
+          f"(obs {obs_b3:.6f} {'>' if obs_above_median else '<='} "
+          f"null median {null_median:.6f})")
+
+    return dict(null_mean=null_mean, null_median=null_median, null_std=null_std,
+                null_min=null_min, null_max=null_max,
+                obs_pctile=obs_pctile, sim_pval=sim_pval,
+                obs_above_median=obs_above_median)
+
+stats_full   = _p07_report(obs_b3_full,   perm_b3_full,
+                            'FULL IN-SAMPLE DATASET',      len(reg))
+stats_stable = _p07_report(obs_b3_stable, perm_b3_stable,
+                            'STABLE-CONDITIONS SUBSAMPLE', len(reg_stable_p07))
+
+# --- Save text output files ---------------------------------------------------
+
+def _save_p07_txt(filename, label, n_obs, obs_b3, obs_pv, st, n_perms, seed):
+    """Write permutation test results to a text file."""
+    fpath = os.path.join(RESULTS_DIR, filename)
+    with open(fpath, 'w') as _f:
+        _f.write(f"P0-7 FORMAL BIAS SIMULATION — {label}\n")
+        _f.write("=" * 60 + "\n\n")
+        _f.write(f"N (regression sample):  {n_obs:,}\n")
+        _f.write(f"N (permutations):       {n_perms:,}\n")
+        _f.write(f"Random seed:            {seed}\n\n")
+        _f.write(f"OBSERVED beta_3 (tfi_x_regime): {obs_b3:.8f}  "
+                 f"(HAC p-value = {obs_pv:.6f})\n\n")
+        _f.write("NULL DISTRIBUTION (permuted fwd_return, plain OLS):\n")
+        _f.write(f"  Mean:    {st['null_mean']:.8f}\n")
+        _f.write(f"  Median:  {st['null_median']:.8f}\n")
+        _f.write(f"  Std:     {st['null_std']:.8f}\n")
+        _f.write(f"  Min:     {st['null_min']:.8f}\n")
+        _f.write(f"  Max:     {st['null_max']:.8f}\n\n")
+        _f.write(f"OBSERVED beta_3 PERCENTILE IN NULL DISTRIBUTION: "
+                 f"{st['obs_pctile']:.1f}th\n")
+        _f.write(f"SIMULATION p-VALUE (fraction >= observed):        "
+                 f"{st['sim_pval']:.4f}\n\n")
+        _f.write("BIAS DIRECTION:\n")
+        _f.write(f"  Null median:                              "
+                 f"{st['null_median']:.8f}\n")
+        _f.write(f"  Observed beta_3 > null median:            "
+                 f"{'YES' if st['obs_above_median'] else 'NO'}\n")
+        _f.write(f"  Upward bias direction:                    "
+                 f"{'CONFIRMED' if st['obs_above_median'] else 'NOT CONFIRMED'}\n")
+    print(f"  Saved: {filename}")
+
+_save_p07_txt('p0_7_simulation_full.txt',
+              'FULL IN-SAMPLE DATASET',
+              len(reg), obs_b3_full, obs_pv_full,
+              stats_full, _P07_N_PERMS, _P07_SEED)
+
+_save_p07_txt('p0_7_simulation_stable.txt',
+              'STABLE-CONDITIONS SUBSAMPLE',
+              len(reg_stable_p07), obs_b3_stable, obs_pv_stable,
+              stats_stable, _P07_N_PERMS, _P07_SEED)
+
+# --- Generate two-panel histogram ---------------------------------------------
+_fig_p07, _axes_p07 = plt.subplots(1, 2, figsize=(12, 5))
+
+for _ax, _parr, _ob3, _st, _title in [
+    (_axes_p07[0], perm_b3_full,   obs_b3_full,   stats_full,
+     f'Full Sample  (N = {len(reg):,})'),
+    (_axes_p07[1], perm_b3_stable, obs_b3_stable, stats_stable,
+     f'Stable-Conditions Subsample  (N = {len(reg_stable_p07):,})'),
+]:
+    _ax.hist(_parr, bins=50, color='steelblue', alpha=0.75,
+             edgecolor='white', linewidth=0.4,
+             label='Permutation null distribution')
+    _ax.axvline(_ob3, color='firebrick', linewidth=1.8, linestyle='--',
+                label=f'Observed β̂₃ = {_ob3:.6f}')
+    _ax.axvline(_st['null_mean'], color='dimgray', linewidth=1.2,
+                linestyle=':', label=f'Null mean = {_st["null_mean"]:.6f}')
+    _ax.axvline(0.0, color='black', linewidth=0.7, linestyle='-', alpha=0.25)
+    _textstr = (f"Sim p-value = {_st['sim_pval']:.4f}\n"
+                f"Observed = {_st['obs_pctile']:.1f}th pctile\n"
+                f"Null mean = {_st['null_mean']:.6f}")
+    _ax.text(0.97, 0.97, _textstr, transform=_ax.transAxes, fontsize=8,
+             verticalalignment='top', horizontalalignment='right',
+             bbox=dict(boxstyle='round,pad=0.4', facecolor='white',
+                       edgecolor='gray', alpha=0.85))
+    _ax.set_title(_title, fontsize=10)
+    _ax.set_xlabel('β̂₃  (tfi_x_regime)', fontsize=9)
+    _ax.set_ylabel('Frequency', fontsize=9)
+    _ax.legend(fontsize=8, loc='upper left')
+
+_fig_p07.suptitle(
+    f'P0-7: Permutation Null Distribution of β̂₃  '
+    f'(N = {_P07_N_PERMS:,} permutations, seed = {_P07_SEED})',
+    fontsize=11,
+)
+_fig_p07.tight_layout()
+_hist_path_p07 = os.path.join(RESULTS_DIR, 'p0_7_simulation_histogram.png')
+_fig_p07.savefig(_hist_path_p07, dpi=150, bbox_inches='tight')
+plt.close(_fig_p07)
+print(f"  Saved: p0_7_simulation_histogram.png")
+
+# Collect observed full-sample regression row for p0_key_results.csv.
+_collect_rows(model_p07_full, 'p0_7_sim_full_observed', key_results_rows)
+
+# --- PAPER.md edit guidance ---------------------------------------------------
+print(f"\n  --- PAPER.md edit guidance (Section 4.5) ---")
+print(f"  Replace the sentence ending '...this is deferred to future work.'")
+print(f"  with the following (substitute bracketed values from output files):")
+print()
+print(f"    A permutation simulation (1,000 datasets under H0, seed=42)")
+print(f"    confirms the upward bias direction formally. Forward returns are")
+print(f"    permuted while preserving the joint distribution of TFI and")
+print(f"    RegimeScore; the full primary regression pipeline is applied to")
+print(f"    each permuted dataset and beta_3 is recorded. The null distribution")
+print(f"    has mean = [null_mean from p0_7_simulation_full.txt], and the")
+print(f"    observed beta_3 = 0.000371 falls at the [obs_pctile]th percentile")
+print(f"    (sim p-value = [sim_pval]). On the stable-conditions subsample")
+print(f"    (N = {len(reg_stable_p07):,}), the observed beta_3 = 0.001016 falls")
+print(f"    at the [obs_pctile_stable]th percentile (sim p-value =")
+print(f"    [sim_pval_stable]). See results/final-improvements/p0_7_*.txt.")
 
 # =============================================================================
 # SAVE p0_key_results.csv

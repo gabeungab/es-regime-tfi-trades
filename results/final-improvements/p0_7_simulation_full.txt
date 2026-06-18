@@ -1,0 +1,23 @@
+P0-7 FORMAL BIAS SIMULATION — FULL IN-SAMPLE DATASET
+============================================================
+
+N (regression sample):  55,634
+N (permutations):       1,000
+Random seed:            42
+
+OBSERVED beta_3 (tfi_x_regime): 0.00037133  (HAC p-value = 0.233732)
+
+NULL DISTRIBUTION (permuted fwd_return, plain OLS):
+  Mean:    0.00001089
+  Median:  0.00001201
+  Std:     0.00033796
+  Min:     -0.00119264
+  Max:     0.00093171
+
+OBSERVED beta_3 PERCENTILE IN NULL DISTRIBUTION: 85.4th
+SIMULATION p-VALUE (fraction >= observed):        0.1460
+
+BIAS DIRECTION:
+  Null median:                              0.00001201
+  Observed beta_3 > null median:            YES
+  Upward bias direction:                    CONFIRMED
