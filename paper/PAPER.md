@@ -654,11 +654,12 @@ Its OOS non-replication therefore reflects a sample-specific
 phenomenon rather than a measurement bias. Taking the bias direction
 as confirmed, a null result under upward bias implies the true β₃
 is no larger than the estimated value, making the primary efficiency
-finding a conservative bound. The non-confounded label applied to 
-Section 5.1 refers specifically to the absence of a mechanical 
-relationship between RegimeScore and Return_{t+1} — not to the 
-absence of circularity in the interaction term itself, which is 
-present in all specifications that use RegimeScore.
+finding a conservative bound. The
+non-confounded label applied to Section 5.1 refers specifically to
+the absence of a mechanical relationship between RegimeScore and
+Return_{t+1} — not to the absence of circularity in the interaction
+term itself, which is present in all specifications that use
+RegimeScore.
 
 ---
 
@@ -1219,19 +1220,28 @@ explanation for the marginal p-value is residual regime
 autocorrelation (lag-1 autocorrelation = 0.806), not genuine causal
 amplification.
 
-The most actionable finding is the stable regime conditions gradient
-in Section 5.5. When the lambda estimation window is stable —
-defined as the bottom tercile of rolling signed-flow standard
-deviation — the regime-conditioned TFI interaction coefficient is
-β₃ = 0.001016 (p = 0.033), statistically significant and 2.7x the
-full-sample estimate. This provides in-sample statistical evidence
-that the regime detector produces stronger forward predictive signal
-under specific, identifiable estimation conditions. The practical
-implication is directional; a market maker with access to real-time
-order flow stability diagnostics — computed from the same trades-only
-data used here — can identify windows where the regime detector's
-signal is most reliable and concentrate adverse selection management
-during these periods.
+The strongest in-sample result is the stable-conditions gradient
+documented in Section 5.5. When the lambda estimation window is
+stable, defined as the bottom tercile of rolling signed-flow
+standard deviation, the regime-conditioned TFI interaction
+coefficient is β₃ = 0.001016 (p = 0.033), statistically significant
+and 2.7x the full-sample estimate. Three caveats preclude any
+directional application of this result. First, the stability
+threshold is derived post-hoc from the in-sample distribution; no
+theoretical prior determines the bottom tercile as the operationally
+relevant cutoff. Second, the finding does not replicate in the
+held-out OOS period. Third, the stability metric itself remains
+partially circular with the regime detector: rolling signed-flow
+standard deviation shares the same aggressor-side input as TFI, and
+low-stability bars are mechanically associated with low TFI variance
+in a way that may inflate the interaction term in the stable subset
+independently of any genuine signal. Whether replacing the
+signed-flow proxy with an orthogonal measure, such as bid-ask spread
+stability, depth constancy, or cancellation rate, would strengthen,
+weaken, or eliminate the finding cannot be determined from the
+current data. The stable-conditions gradient motivates a specific
+future investigation, but the three caveats documented above
+preclude any current directional application.
 
 **Net-return magnitude.** A back-of-envelope calculation bounds the
 economic significance of the regime-conditioned signal in the
@@ -1257,17 +1267,6 @@ frequency is sufficient to amortize fixed costs but does not
 alter the gross-vs-net shortfall. No quantitative calibration
 of adverse selection amplification can be derived from these
 figures for the reasons stated above.
-
-Two important qualifications apply. First, the stable regime
-conditions finding is in-sample only and does not replicate in the
-OOS period. Second, the stability metric used here (rolling
-signed-flow standard deviation) remains partially circular with the
-regime detector. Whether removing this circularity — by replacing
-the signed-flow proxy with a direct, orthogonal measure such as
-bid-ask spread stability, depth constancy, or cancellation rate —
-would strengthen, weaken, or eliminate the finding cannot be
-determined from the current data. The finding motivates further
-investigation rather than immediate practical application.
 
 ---
 
