@@ -1835,10 +1835,18 @@ None
 
 ---
 
-## 2026-06-19
+## 2026-06-23
 
 **Session Summary:**
-- 
+- Proofread full PAPER.md; compiled and produced updated paper PDF 
+  in Overleaf.
+- Implemented all 10 P0 quality improvements into the Overleaf LaTeX 
+  source (main.tex and references.bib), adding four new robustness 
+  subsections (§6.3–6.6) and updating the abstract.
+- Added Figure A6 (permutation null distribution histogram) to the 
+  paper appendix by updating final_improvements.py to produce a 
+  paper-quality version.
+- Wrote Resume bullets for this full project (4 2-line bullets).
 
 **Findings:**
 None
@@ -1847,6 +1855,7 @@ None
 None
 
 **Next step:**
-
+Project 1 is done! 
+Start project 2 research in the fall (hopefully in MATH 4699)
 
 ---
