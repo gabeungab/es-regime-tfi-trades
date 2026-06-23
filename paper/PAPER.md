@@ -659,7 +659,8 @@ Its OOS non-replication therefore reflects a sample-specific
 phenomenon rather than a measurement bias. Taking the bias direction
 as confirmed, a null result under upward bias implies the true β₃
 is no larger than the estimated value, making the primary efficiency
-finding a conservative bound. The
+finding a conservative bound. Figure A6 in the appendix displays
+both null distributions with the observed values marked. The
 non-confounded label applied to Section 5.1 refers specifically to
 the absence of a mechanical relationship between RegimeScore and
 Return_{t+1} — not to the absence of circularity in the interaction
@@ -1417,6 +1418,21 @@ how lambda responds to qualitatively different market conditions
 and motivates the exclusion window design for FOMC announcement
 days.
 [FIGURE A5: lambda_individual_days.png]
+
+**Figure A6: Permutation null distribution of β₃ (1,000 permutations,
+seed = 42).**
+Two panels. Each shows the histogram of β₃ recovered from 1,000
+permutations of forward returns R_{t+1}, with TFI and RegimeScore
+held fixed. Red dashed line: observed β₃. Gray dotted line: null mean.
+Left panel: full sample (N = 55,634). Null mean = +0.000011, confirming
+upward bias from mechanical co-elevation. Observed β₃ = 0.000371 falls
+at the 85.4th percentile (simulation p-value = 0.146), consistent with
+a null result. Right panel: stable-conditions subsample (N = 18,355).
+Null mean = 0.000000 and observed β₃ = 0.001016 falls at the 98.5th
+percentile (simulation p-value = 0.015), confirming the
+stable-conditions result is not a mechanical artifact of upward bias.
+See Section 4.5.
+[FIGURE A6: p0_7_simulation_histogram.png]
 
 ---
 
