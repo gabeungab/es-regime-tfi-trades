@@ -1123,18 +1123,13 @@ for _ax, _parr, _ob3, _st, _title in [
              bbox=dict(boxstyle='round,pad=0.4', facecolor='white',
                        edgecolor='gray', alpha=0.85))
     _ax.set_title(_title, fontsize=10)
-    _ax.set_xlabel('β̂₃  (tfi_x_regime)', fontsize=9)
+    _ax.set_xlabel('β̂₃', fontsize=9)
     _ax.set_ylabel('Frequency', fontsize=9)
     _ax.legend(fontsize=8, loc='upper left')
 
-_fig_p07.suptitle(
-    f'P0-7: Permutation Null Distribution of β̂₃  '
-    f'(N = {_P07_N_PERMS:,} permutations, seed = {_P07_SEED})',
-    fontsize=11,
-)
 _fig_p07.tight_layout()
 _hist_path_p07 = os.path.join(RESULTS_DIR, 'p0_7_simulation_histogram.png')
-_fig_p07.savefig(_hist_path_p07, dpi=150, bbox_inches='tight')
+_fig_p07.savefig(_hist_path_p07, dpi=300, bbox_inches='tight')
 plt.close(_fig_p07)
 print(f"  Saved: p0_7_simulation_histogram.png")
 
