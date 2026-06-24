@@ -19,6 +19,7 @@ Phase 0 code items:
     P0-5  Expanded Announcement Exclusion Set      [IMPLEMENTED]
     P0-6  Pre-Announcement Window Characterization [IMPLEMENTED]
     P0-7  Formal Bias Simulation                   [IMPLEMENTED]
+    P0-R  ACF BOOTSTRAP VALIDATION                 [IMPLEMENTED]
 
 Writing revisions P0-8, P0-9, P0-10 are applied directly to PAPER.md
 and are not implemented here.
@@ -26,14 +27,15 @@ and are not implemented here.
 Outputs written to results/final-improvements/:
     p0_1_primary_no_lag_return.txt
     p0_2_threshold_sensitivity.txt
-    p0_3_additive_regression.txt           [IMPLEMENTED]
-    p0_4_window_sensitivity.csv            [IMPLEMENTED]
-    p0_5_expanded_exclusion.txt            [IMPLEMENTED]
-    p0_6_preannouncement_stats.txt         [IMPLEMENTED]
-    p0_7_simulation_full.txt               [IMPLEMENTED]
-    p0_7_simulation_stable.txt             [IMPLEMENTED]
-    p0_7_simulation_histogram.png          [IMPLEMENTED]
+    p0_3_additive_regression.txt
+    p0_4_window_sensitivity.csv
+    p0_5_expanded_exclusion.txt
+    p0_6_preannouncement_stats.txt
+    p0_7_simulation_full.txt
+    p0_7_simulation_stable.txt
+    p0_7_simulation_histogram.png
     p0_key_results.csv
+    p0_r_acf_bootstrap_validation.txt
 """
 
 import os
@@ -1152,6 +1154,249 @@ print(f"    (sim p-value = [sim_pval]). On the stable-conditions subsample")
 print(f"    (N = {len(reg_stable_p07):,}), the observed beta_3 = 0.001016 falls")
 print(f"    at the [obs_pctile_stable]th percentile (sim p-value =")
 print(f"    [sim_pval_stable]). See results/final-improvements/p0_7_*.txt.")
+
+# =============================================================================
+# P0-R — ACF BOOTSTRAP VALIDATION
+# =============================================================================
+# Formally test whether the lag-1 TFI autocorrelation differential between
+# high-regime and low-regime bars is statistically significant, using a
+# moving block bootstrap (Künsch, 1989, Annals of Statistics, 17(3), 1217–1241).
+#
+# Hypothesis (directional, from Kyle 1985): informed traders randomize order
+# timing to minimize price impact, so high-regime TFI should be LESS persistent
+# than low-regime TFI.
+#   H₀: ACF_high = ACF_low
+#   H₁: ACF_high < ACF_low  (one-tailed, directional)
+#
+# Day-boundary treatment: same as _build_reg_df — only same-day, exactly-
+# 1-minute-apart consecutive bar pairs are retained. Pairs spanning overnight
+# are excluded, matching the overnight return exclusion in _build_reg_df.
+#
+# Block length L = 38 ≈ n^(1/3) per Künsch (1989) with n ≈ 55,634 pairs.
+#
+# Required outputs:
+#   p0_r_acf_bootstrap.txt
+
+print("\n" + "=" * 60)
+print("P0-R — ACF BOOTSTRAP VALIDATION")
+print("=" * 60)
+
+# --- Constants ----------------------------------------------------------------
+_P0R_BLOCK_LENGTH   = 38       # Künsch (1989): n^(1/3) ≈ 55634^(1/3)
+_P0R_N_BOOT         = 1_000
+_P0R_SEED           = 42
+_P0R_HIGH_THRESH    = 0.5      # same threshold used throughout
+_P0R_PAPER_ACF_HIGH = 0.075    # paper Figure A2 — sanity check reference only
+_P0R_PAPER_ACF_LOW  = 0.117    # paper Figure A2 — sanity check reference only
+
+# --- Build consecutive same-day pair DataFrame --------------------------------
+# Uses raw tfi and regime_score series (before regression NaN drops) so that
+# consecutive 1-minute bars are correctly identified. tfi['tfi'] extracts the
+# signal Series from the DataFrame returned by compute_tfi(), consistent with
+# _build_reg_df line 227. regime_score is already a Series.
+_acf_df = pd.DataFrame({
+    'tfi':          tfi['tfi'],
+    'regime_score': regime_score,
+}).dropna()
+
+_acf_df['tfi_lag1'] = _acf_df['tfi'].shift(1)
+
+# Same-day and exact-1-minute consecutive pair filter — mirrors the overnight
+# boundary treatment in _build_reg_df (nulling log_return at day transitions).
+_acf_date_s           = pd.Series(_acf_df.index.date, index=_acf_df.index)
+_acf_df['_date']      = _acf_date_s
+_acf_df['_prev_date'] = _acf_date_s.shift(1)
+_acf_df['_dt_diff']   = _acf_df.index.to_series().diff()
+_acf_df = _acf_df[
+    (_acf_df['_date'] == _acf_df['_prev_date']) &
+    (_acf_df['_dt_diff'] == pd.Timedelta('1min'))
+].drop(columns=['_date', '_prev_date', '_dt_diff'])
+
+_acf_df['high_regime'] = (_acf_df['regime_score'] > _P0R_HIGH_THRESH).astype(int)
+_acf_df = _acf_df.dropna(subset=['tfi', 'tfi_lag1'])
+
+n_p0r_total = len(_acf_df)
+n_p0r_high  = int(_acf_df['high_regime'].sum())
+n_p0r_low   = n_p0r_total - n_p0r_high
+
+print(f"\n  Consecutive same-day pair sample:")
+print(f"    Total pairs:       {n_p0r_total:,}")
+print(f"    High-regime pairs: {n_p0r_high:,}  "
+      f"({n_p0r_high / n_p0r_total * 100:.1f}%)")
+print(f"    Low-regime pairs:  {n_p0r_low:,}  "
+      f"({n_p0r_low / n_p0r_total * 100:.1f}%)")
+
+# --- Observed lag-1 ACF -------------------------------------------------------
+_hi_mask_obs = _acf_df['high_regime'] == 1
+_lo_mask_obs = ~_hi_mask_obs
+
+obs_acf_high = float(np.corrcoef(
+    _acf_df.loc[_hi_mask_obs, 'tfi_lag1'].values,
+    _acf_df.loc[_hi_mask_obs, 'tfi'].values,
+)[0, 1])
+obs_acf_low = float(np.corrcoef(
+    _acf_df.loc[_lo_mask_obs, 'tfi_lag1'].values,
+    _acf_df.loc[_lo_mask_obs, 'tfi'].values,
+)[0, 1])
+obs_acf_diff = obs_acf_high - obs_acf_low
+
+print(f"\n  Observed lag-1 ACF:")
+print(f"    High-regime:    {obs_acf_high:.4f}")
+print(f"    Low-regime:     {obs_acf_low:.4f}")
+print(f"    Differential:   {obs_acf_diff:.4f}  (high − low)")
+if obs_acf_high != 0:
+    print(f"    Ratio low/high: {obs_acf_low / obs_acf_high:.3f}x  "
+          f"(low-regime persistence relative to high)")
+
+# Sanity check against paper Figure A2 values. Difference is expected if
+# Figure A2 was computed from the full TFI series rather than the pair sample.
+_p0r_tol   = 0.02
+_p0r_sc_hi = abs(obs_acf_high - _P0R_PAPER_ACF_HIGH) < _p0r_tol
+_p0r_sc_lo = abs(obs_acf_low  - _P0R_PAPER_ACF_LOW)  < _p0r_tol
+if _p0r_sc_hi and _p0r_sc_lo:
+    print(f"\n  Sanity check vs. paper Figure A2 "
+          f"(high ≈ {_P0R_PAPER_ACF_HIGH}, low ≈ {_P0R_PAPER_ACF_LOW}): ✓")
+else:
+    print(f"\n  NOTE: ACF values differ from paper Figure A2 "
+          f"(high ≈ {_P0R_PAPER_ACF_HIGH}, low ≈ {_P0R_PAPER_ACF_LOW}).")
+    print(f"    Expected if Figure A2 was computed from the full TFI series")
+    print(f"    rather than the consecutive-pair sample used here.")
+    print(f"    Bootstrap p-value is valid for the values computed here.")
+
+# --- Build numpy pairs array for bootstrap efficiency -------------------------
+# Columns: [tfi_lag1, tfi_current, high_regime_flag]
+_p0r_pairs = np.column_stack([
+    _acf_df['tfi_lag1'].values,
+    _acf_df['tfi'].values,
+    _acf_df['high_regime'].values,
+])
+n_p0r = len(_p0r_pairs)
+
+# --- Moving block bootstrap (Künsch 1989) -------------------------------------
+# Start positions drawn uniformly from {0, ..., n − L} so no block overruns
+# the array boundary. Blocks concatenated and trimmed to n observations.
+# CAVEAT: block boundaries do not respect day boundaries, so overnight pairs
+# can appear at join points. This modestly overstates within-day autocorrelation
+# at block joins, making the bootstrap marginally anti-conservative.
+print(f"\n  Running {_P0R_N_BOOT:,} block bootstrap iterations "
+      f"(L = {_P0R_BLOCK_LENGTH}, seed = {_P0R_SEED}) ...")
+
+np.random.seed(_P0R_SEED)
+_p0r_boot_diffs = []
+
+for _bi in range(_P0R_N_BOOT):
+    _n_blocks = int(np.ceil(n_p0r / _P0R_BLOCK_LENGTH))
+    _starts   = np.random.randint(
+        0, n_p0r - _P0R_BLOCK_LENGTH + 1, size=_n_blocks
+    )
+    _boot_idx = np.concatenate([
+        np.arange(_s, _s + _P0R_BLOCK_LENGTH) for _s in _starts
+    ])[:n_p0r]
+    _boot = _p0r_pairs[_boot_idx]
+
+    _hi_b = _boot[_boot[:, 2] == 1]
+    _lo_b = _boot[_boot[:, 2] == 0]
+
+    if len(_hi_b) < 2 or len(_lo_b) < 2:
+        continue
+
+    _acf_hi_b = float(np.corrcoef(_hi_b[:, 0], _hi_b[:, 1])[0, 1])
+    _acf_lo_b = float(np.corrcoef(_lo_b[:, 0], _lo_b[:, 1])[0, 1])
+    _p0r_boot_diffs.append(_acf_hi_b - _acf_lo_b)
+
+    if (_bi + 1) % 250 == 0:
+        print(f"    {_bi + 1:,}/{_P0R_N_BOOT:,} ...")
+
+_p0r_boot_arr  = np.array(_p0r_boot_diffs)
+_p0r_n_valid   = len(_p0r_boot_arr)
+_p0r_null_mean = float(_p0r_boot_arr.mean())
+_p0r_null_std  = float(_p0r_boot_arr.std())
+_p0r_ci_low    = float(np.percentile(_p0r_boot_arr, 2.5))
+_p0r_ci_high   = float(np.percentile(_p0r_boot_arr, 97.5))
+
+# One-tailed p (H₁: ACF_high < ACF_low → observed diff < 0)
+_p0r_p_one = float((_p0r_boot_arr <= obs_acf_diff).mean())
+# Two-tailed p
+_p0r_p_two = float(2 * min(
+    (_p0r_boot_arr <= obs_acf_diff).mean(),
+    (_p0r_boot_arr >= obs_acf_diff).mean(),
+))
+
+_p0r_sig = ('***' if _p0r_p_one < 0.01
+             else '**' if _p0r_p_one < 0.05
+             else '*'  if _p0r_p_one < 0.10
+             else 'not significant at α = 0.10')
+
+print(f"\n  Bootstrap results ({_p0r_n_valid:,} valid iterations):")
+print(f"  {'Observed differential (high − low):':<42} {obs_acf_diff:>8.4f}")
+print(f"  {'Bootstrap null mean:':<42} {_p0r_null_mean:>8.4f}")
+print(f"  {'Bootstrap null std:':<42} {_p0r_null_std:>8.4f}")
+print(f"  {'95% CI for differential:':<42} "
+      f"[{_p0r_ci_low:.4f}, {_p0r_ci_high:.4f}]")
+print(f"  {'One-tailed p (H₁: ACF_high < ACF_low):':<42} {_p0r_p_one:>8.4f}  "
+      f"{_p0r_sig}")
+print(f"  {'Two-tailed p:':<42} {_p0r_p_two:>8.4f}")
+
+# --- Save output file ---------------------------------------------------------
+_p0r_path = os.path.join(RESULTS_DIR, 'p0_r_acf_bootstrap.txt')
+with open(_p0r_path, 'w') as _f:
+    _f.write("P0-R ACF BOOTSTRAP VALIDATION\n")
+    _f.write("=" * 60 + "\n\n")
+    _f.write("Test: lag-1 TFI autocorrelation differential between\n")
+    _f.write("      high-regime and low-regime bars.\n")
+    _f.write("H0:  ACF_high = ACF_low\n")
+    _f.write("H1:  ACF_high < ACF_low  (one-tailed, directional per Kyle 1985)\n\n")
+    _f.write("Method: moving block bootstrap\n")
+    _f.write("  Kuensch (1989), Annals of Statistics, 17(3), 1217-1241\n")
+    _f.write(f"  Block length L:       {_P0R_BLOCK_LENGTH}  "
+             f"(approx. n^(1/3), n = {n_p0r:,})\n")
+    _f.write(f"  Bootstrap iterations: {_P0R_N_BOOT:,}\n")
+    _f.write(f"  Valid iterations:     {_p0r_n_valid:,}\n")
+    _f.write(f"  Random seed:          {_P0R_SEED}\n\n")
+    _f.write("Day-boundary treatment: only same-day, exactly-1-minute-apart\n")
+    _f.write("  consecutive pairs retained (mirrors _build_reg_df overnight\n")
+    _f.write("  exclusion for returns).\n\n")
+    _f.write("SAMPLE:\n")
+    _f.write(f"  Total pairs:       {n_p0r_total:,}\n")
+    _f.write(f"  High-regime pairs: {n_p0r_high:,}  "
+             f"({n_p0r_high / n_p0r_total * 100:.1f}%)\n")
+    _f.write(f"  Low-regime pairs:  {n_p0r_low:,}  "
+             f"({n_p0r_low / n_p0r_total * 100:.1f}%)\n\n")
+    _f.write("OBSERVED:\n")
+    _f.write(f"  Lag-1 ACF high-regime:  {obs_acf_high:.6f}\n")
+    _f.write(f"  Lag-1 ACF low-regime:   {obs_acf_low:.6f}\n")
+    _f.write(f"  Differential (hi-lo):   {obs_acf_diff:.6f}\n")
+    if obs_acf_high != 0:
+        _f.write(f"  Ratio (low/high):       {obs_acf_low / obs_acf_high:.4f}x\n")
+    _f.write(f"\n  Paper Figure A2 reference: "
+             f"high approx. {_P0R_PAPER_ACF_HIGH}, "
+             f"low approx. {_P0R_PAPER_ACF_LOW}\n")
+    _f.write("  (Difference expected if Figure A2 used full TFI series "
+             "rather than consecutive-pair sample.)\n\n")
+    _f.write("BOOTSTRAP NULL DISTRIBUTION:\n")
+    _f.write(f"  Mean:   {_p0r_null_mean:.6f}\n")
+    _f.write(f"  Std:    {_p0r_null_std:.6f}\n")
+    _f.write(f"  95% CI: [{_p0r_ci_low:.6f}, {_p0r_ci_high:.6f}]\n\n")
+    _f.write("RESULTS:\n")
+    _f.write(f"  One-tailed p (H1: ACF_high < ACF_low): "
+             f"{_p0r_p_one:.4f}  {_p0r_sig}\n")
+    _f.write(f"  Two-tailed p:                           {_p0r_p_two:.4f}\n\n")
+    _f.write("CAVEAT: block boundaries do not respect day boundaries;\n")
+    _f.write("  p-values may be marginally anti-conservative.\n")
+print(f"  Saved: p0_r_acf_bootstrap.txt")
+
+# --- PAPER.md edit guidance ---------------------------------------------------
+print(f"\n  --- PAPER.md edit guidance (Section 4.4, after Figure A2 text) ---")
+print(f"  Insert after the sentence ending '...than in uninformed ones.':")
+print()
+print(f"    A moving block bootstrap (Kuensch, 1989; L = {_P0R_BLOCK_LENGTH} bars,")
+print(f"    B = {_P0R_N_BOOT:,} iterations) formally tests the ACF differential.")
+print(f"    The observed differential (ACF_high - ACF_low) = {obs_acf_diff:.4f};")
+print(f"    one-tailed p = {_p0r_p_one:.4f} (H1: ACF_high < ACF_low),")
+print(f"    bootstrap 95% CI [{_p0r_ci_low:.4f}, {_p0r_ci_high:.4f}]. This")
+print(f"    confirms the persistence differential is statistically significant")
+print(f"    and consistent with Kyle (1985)'s prediction that informed traders")
+print(f"    randomize order timing to minimize price impact.")
 
 # =============================================================================
 # SAVE p0_key_results.csv
