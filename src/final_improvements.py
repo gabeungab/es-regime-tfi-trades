@@ -346,15 +346,6 @@ print(f"\n  Without-control regression coefficients:")
 _print_coeff_table(model_p01_without,
                    ['const', 'tfi', 'regime_score', 'tfi_x_regime', 'lag_tfi'])
 
-# PAPER.md edit guidance printed to console for reference
-print(f"\n  --- PAPER.md edit guidance (Section 5.1) ---")
-print(f"  Append the following sentence immediately after the existing sentence")
-print(f"  ending '...R² = 0.236 is driven almost entirely by this term.':")
-print()
-print(f"    Without the mean-reversion control, R² = {r2_without:.6f},")
-print(f"    confirming that the regime-TFI interaction accounts for")
-print(f"    essentially none of the return variance.")
-
 # Save and collect
 _save_model(model_p01_without, 'p0_1_primary_no_lag_return.txt')
 _collect_rows(model_p01_without, 'p0_1_no_lag_return', key_results_rows)
@@ -885,19 +876,6 @@ with open(_p06_path, 'w') as _f:
 
 print(f"  Saved: p0_6_preannouncement_stats.txt")
 
-# --- PAPER.md edit guidance --------------------------------------------------
-print(f"\n  --- PAPER.md edit guidance (Section 4.3 footnote) ---")
-print(f"  Add immediately after the sentence ending '...excluding these bars")
-print(f"  would discard potentially genuine informed trading episodes.':")
-print()
-print(f"    Descriptively, the {len(_P06_FOMC_DATES)} FOMC pre-announcement")
-print(f"    windows in the in-sample period (13:30–13:59 ET, {n_pre_p06} bars")
-print(f"    total) have mean RegimeScore {_pre_mean_rs_p06:.3f} and mean")
-print(f"    |TFI| {_pre_mean_tfi_p06:.4f}, compared to full-sample means of")
-print(f"    {_full_mean_rs_p06:.3f} and {_full_mean_tfi_p06:.4f} respectively.")
-print(f"    With only {len(_P06_FOMC_DATES)} events, this comparison is")
-print(f"    descriptive only and carries no inferential weight.")
-
 # =============================================================================
 # P0-7 — FORMAL BIAS SIMULATION
 # =============================================================================
@@ -1138,23 +1116,6 @@ print(f"  Saved: p0_7_simulation_histogram.png")
 # Collect observed full-sample regression row for p0_key_results.csv.
 _collect_rows(model_p07_full, 'p0_7_sim_full_observed', key_results_rows)
 
-# --- PAPER.md edit guidance ---------------------------------------------------
-print(f"\n  --- PAPER.md edit guidance (Section 4.5) ---")
-print(f"  Replace the sentence ending '...this is deferred to future work.'")
-print(f"  with the following (substitute bracketed values from output files):")
-print()
-print(f"    A permutation simulation (1,000 datasets under H0, seed=42)")
-print(f"    confirms the upward bias direction formally. Forward returns are")
-print(f"    permuted while preserving the joint distribution of TFI and")
-print(f"    RegimeScore; the full primary regression pipeline is applied to")
-print(f"    each permuted dataset and beta_3 is recorded. The null distribution")
-print(f"    has mean = [null_mean from p0_7_simulation_full.txt], and the")
-print(f"    observed beta_3 = 0.000371 falls at the [obs_pctile]th percentile")
-print(f"    (sim p-value = [sim_pval]). On the stable-conditions subsample")
-print(f"    (N = {len(reg_stable_p07):,}), the observed beta_3 = 0.001016 falls")
-print(f"    at the [obs_pctile_stable]th percentile (sim p-value =")
-print(f"    [sim_pval_stable]). See results/final-improvements/p0_7_*.txt.")
-
 # =============================================================================
 # P0-R — ACF BOOTSTRAP VALIDATION
 # =============================================================================
@@ -1384,19 +1345,6 @@ with open(_p0r_path, 'w') as _f:
     _f.write("CAVEAT: block boundaries do not respect day boundaries;\n")
     _f.write("  p-values may be marginally anti-conservative.\n")
 print(f"  Saved: p0_r_acf_bootstrap.txt")
-
-# --- PAPER.md edit guidance ---------------------------------------------------
-print(f"\n  --- PAPER.md edit guidance (Section 4.4, after Figure A2 text) ---")
-print(f"  Insert after the sentence ending '...than in uninformed ones.':")
-print()
-print(f"    A moving block bootstrap (Kuensch, 1989; L = {_P0R_BLOCK_LENGTH} bars,")
-print(f"    B = {_P0R_N_BOOT:,} iterations) formally tests the ACF differential.")
-print(f"    The observed differential (ACF_high - ACF_low) = {obs_acf_diff:.4f};")
-print(f"    one-tailed p = {_p0r_p_one:.4f} (H1: ACF_high < ACF_low),")
-print(f"    bootstrap 95% CI [{_p0r_ci_low:.4f}, {_p0r_ci_high:.4f}]. This")
-print(f"    confirms the persistence differential is statistically significant")
-print(f"    and consistent with Kyle (1985)'s prediction that informed traders")
-print(f"    randomize order timing to minimize price impact.")
 
 # =============================================================================
 # SAVE p0_key_results.csv

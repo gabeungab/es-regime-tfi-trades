@@ -552,18 +552,6 @@ RegimeScore would instead test whether the prior bar's regime state
 predicts the current bar's TFI-return relationship — a weaker and
 less direct test of the detector's real-time function.
 
-A secondary validation is provided by the autocorrelation structure
-of TFI across regime states (Figure A2). High-regime bars exhibit
-materially lower TFI persistence (lag-1 ACF ≈ 0.075, decaying to
-noise by lag 3–4) relative to low-regime bars (lag-1 ACF ≈ 0.117,
-remaining above the 95% confidence band through lag 8–9). This
-differential is consistent with the Kyle (1985) prediction that
-informed traders randomize order timing to minimize price impact,
-producing less persistent directional flow in informed episodes than
-in uninformed ones. It provides directional corroboration that the
-regime detector is identifying structurally different order flow
-conditions, not merely high-activity periods.
-
 A pre-announcement validation was considered — testing whether
 RegimeScore is elevated in the 30-minute window before macro
 announcements, when informed traders with early signal access should
@@ -571,7 +559,7 @@ be active. This test is infeasible with RTH-only data; CPI and NFP
 releases occur at 8:30 AM before market open, leaving only 6
 observable FOMC pre-announcement windows in the in-sample period —
 an insufficient sample for a meaningful test. The validation test
-above is therefore the primary and sufficient criterion.
+above is therefore the primary validation criterion.
 
 The detector operates most reliably during the stable midday and
 early afternoon portion of the trading session, where lambda is
@@ -659,7 +647,7 @@ Its OOS non-replication therefore reflects a sample-specific
 phenomenon rather than a measurement bias. Taking the bias direction
 as confirmed, a null result under upward bias implies the true β₃
 is no larger than the estimated value, making the primary efficiency
-finding a conservative bound. Figure A6 in the appendix displays
+finding a conservative bound. Figure A5 in the appendix displays
 both null distributions with the observed values marked. The
 non-confounded label applied to Section 5.1 refers specifically to
 the absence of a mechanical relationship between RegimeScore and
@@ -907,12 +895,12 @@ stable conditions reflects some combination of genuine regime-
 conditioned predictability and residual mechanical co-elevation, and
 these cannot be separated with trades-only data. 
 
-Figures A3 and A4 in the appendix show the average intraday profiles 
-of Kyle's lambda and RegimeScore respectively. Lambda (Figure A3) is 
+Figures A2 and A3 in the appendix show the average intraday profiles 
+of Kyle's lambda and RegimeScore respectively. Lambda (Figure A2) is 
 elevated and relatively stable at the open, reaches its session minimum 
 around 12:00–12:30 ET, then rises and remains elevated through the
 afternoon before dropping sharply at the close. RegimeScore
-(Figure A4) is mechanically zeroed during the first hour of trading
+(Figure A3) is mechanically zeroed during the first hour of trading
 due to the 30-bar lambda warmup window, jumps to approximately 0.23
 at 10:30 ET, and remains broadly stable through the session before
 dropping to zero at the 15:50 ET exclusion boundary. The flat
@@ -1356,22 +1344,7 @@ co-elevation argument described in Section 4.5. Visual analog of
 Table 2.
 [FIGURE A1: tfi_scatter_by_regime.png]
 
-**Figure A2: Autocorrelation function of TFI by regime state.**
-Two side-by-side bar chart panels. X-axis is lag in minutes (1–20);
-Y-axis is autocorrelation. Left panel: high-regime bars
-(RegimeScore > 0.5). Right panel: low-regime bars (RegimeScore
-≤ 0.5). Dashed lines indicate 95% confidence bands. High-regime
-TFI exhibits materially lower persistence: lag-1 ACF ≈ 0.075,
-decaying to within the 95% confidence band by lag 3–4. Low-regime
-TFI exhibits substantially higher persistence: lag-1 ACF ≈ 0.117,
-remaining above the 95% band through approximately lag 8–9 before
-slow decay. The differential is consistent with the Kyle (1985)
-prediction that informed traders randomize order timing to minimize
-price impact, producing less persistent directional flow in
-high-regime episodes than in low-regime ones.
-[FIGURE A2: tfi_acf_by_regime.png]
-
-**Figure A3: Average intraday Kyle's lambda by minute.**
+**Figure A2: Average intraday Kyle's lambda by minute.**
 Single panel. X-axis is time of day (09:30–16:00 ET); Y-axis is
 mean Kyle's lambda averaged across 169 in-sample trading days.
 Lambda is elevated and relatively stable near the open (~0.0045),
@@ -1383,9 +1356,9 @@ reflects the low-activity, low-volatility period documented in
 Section 3.4 and directly supports the stable regime conditions
 analysis in Section 5.5: the lambda estimation window is most
 stable and representative during this trough, not noisiest.
-[FIGURE A3: lambda_intraday.png]
+[FIGURE A2: lambda_intraday.png]
 
-**Figure A4: Average intraday RegimeScore by minute.**
+**Figure A3: Average intraday RegimeScore by minute.**
 Single panel. X-axis is time of day (09:30–16:00 ET); Y-axis is
 mean RegimeScore averaged across 169 in-sample trading days.
 RegimeScore is mechanically zero from 09:30 through approximately
@@ -1393,14 +1366,14 @@ RegimeScore is mechanically zero from 09:30 through approximately
 to approximately 0.23 and remaining broadly stable through the
 session. The hard drop to zero at approximately 15:50 ET reflects
 the end-of-session exclusion window. Unlike the lambda intraday
-profile (Figure A3), RegimeScore does not exhibit a midday trough;
+profile (Figure A2), RegimeScore does not exhibit a midday trough;
 the rolling z-score standardization causes the score to reflect
 relative rather than absolute lambda levels, so the low-lambda
 midday period does not suppress RegimeScore below its session
 average.
-[FIGURE A4: regime_score_intraday.png]
+[FIGURE A3: regime_score_intraday.png]
 
-**Figure A5: Intraday Kyle's lambda for four representative trading
+**Figure A4: Intraday Kyle's lambda for four representative trading
 days.**
 2×2 grid. X-axis is time of day; Y-axis is Kyle's lambda. Top
 left: high-volatility session (2025-06-13), showing large-amplitude
@@ -1417,9 +1390,9 @@ low-volatility day with moderate intraday variation. Illustrates
 how lambda responds to qualitatively different market conditions
 and motivates the exclusion window design for FOMC announcement
 days.
-[FIGURE A5: lambda_individual_days.png]
+[FIGURE A4: lambda_individual_days.png]
 
-**Figure A6: Permutation null distribution of β₃ (1,000 permutations,
+**Figure A5: Permutation null distribution of β₃ (1,000 permutations,
 seed = 42).**
 Two panels. Each shows the histogram of β₃ recovered from 1,000
 permutations of forward returns R_{t+1}, with TFI and RegimeScore
@@ -1432,7 +1405,7 @@ Null mean = 0.000000 and observed β₃ = 0.001016 falls at the 98.5th
 percentile (simulation p-value = 0.015), confirming the
 stable-conditions result is not a mechanical artifact of upward bias.
 See Section 4.5.
-[FIGURE A6: p0_7_simulation_histogram.png]
+[FIGURE A5: p0_7_simulation_histogram.png]
 
 ---
 
