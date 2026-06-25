@@ -1846,10 +1846,31 @@ None
 - Added Figure A6 (permutation null distribution histogram) to the 
   paper appendix by updating final_improvements.py to produce a 
   paper-quality version.
-- Wrote Resume bullets for this full project (4 2-line bullets).
 
 **Findings:**
 None
+
+**Open questions:**
+None
+
+**Next step:**
+Write resume bullets
+
+---
+
+## 2026-06-24
+
+**Session Summary:**
+- Finalized Resume bullets for full project (4 2-line bullets).
+  - Bullet 1: Tested ACF secondary validation to be not significant; 
+    removed figure A2 and ACF paragraph from PAPER.md and main.tex.
+    Final bullet cites 2.278× price impact amplification (p<0.001).
+  - 
+
+**Findings:**
+Paper's Figure A2 ACF values (0.075 vs 0.117) were computed treating 
+sparse high-regime subseries as consecutive — invalid. 
+- Correct values: 0.1172 vs 0.1205, diff = −0.0033.
 
 **Open questions:**
 None
