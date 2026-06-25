@@ -1858,14 +1858,13 @@ Write resume bullets
 
 ---
 
-## 2026-06-24
+## 2026-06-25
 
 **Session Summary:**
-- Finalized Resume bullets for full project (4 2-line bullets).
+- Finalized Resume bullets for full project (5 2-line bullets).
   - Bullet 1: Tested ACF secondary validation to be not significant; 
     removed figure A2 and ACF paragraph from PAPER.md and main.tex.
     Final bullet cites 2.278× price impact amplification (p<0.001).
-  - 
 
 **Findings:**
 Paper's Figure A2 ACF values (0.075 vs 0.117) were computed treating 
